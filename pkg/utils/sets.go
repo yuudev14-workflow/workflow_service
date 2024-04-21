@@ -14,7 +14,7 @@ func (s Set[T]) Remove(item T) {
 	delete(s, item)
 }
 
-func (s Set[T]) In(item T) bool {
+func (s Set[T]) Has(item T) bool {
 	_, exist := s[item]
 	return exist
 }

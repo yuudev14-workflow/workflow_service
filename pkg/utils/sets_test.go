@@ -62,6 +62,6 @@ func TestSetIn(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		assert.Equal(t, set.In(test.param), test.expected)
+		assert.Equal(t, set.Has(test.param), test.expected)
 	}
 }
