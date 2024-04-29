@@ -51,6 +51,7 @@ require (
 	github.com/astaxie/beego v1.12.3
 	github.com/joho/godotenv v1.5.1
 	github.com/sirupsen/logrus v1.9.3
+	github.com/streadway/amqp v1.1.0
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/gin-swagger v1.6.0
 	golang.org/x/net v0.22.0 // indirect

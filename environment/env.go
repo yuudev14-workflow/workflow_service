@@ -15,9 +15,11 @@ var (
 )
 
 type SettingsData struct {
-	DB_URL      string
-	LOGGER_MODE string
-	MQ_URL      string
+	DB_URL            string
+	LOGGER_MODE       string
+	MQ_URL            string
+	ReceiverQueueName string
+	SenderQueueName   string
 }
 
 // load env based
@@ -34,6 +36,8 @@ func SetEnv() {
 	Settings.DB_URL = GetDbUrl()
 	Settings.LOGGER_MODE = GetLoggerLevel()
 	Settings.MQ_URL = GetDbUrl()
+	Settings.SenderQueueName = "workflow"
+	Settings.ReceiverQueueName = "workflow_processor"
 }
 
 // function to retrieve contants in the env

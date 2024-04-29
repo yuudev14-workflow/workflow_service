@@ -21,6 +21,12 @@ func initApp() {
 func main() {
 	initApp()
 	mq.ConnectToMQ()
+	go mq.Listen()
+	defer mq.MQConn.Close()
+	defer mq.MQChannel.Close()
+
 	app := api.InitRouter()
-	app.Run()
+	go app.Run()
+	select {}
+
 }
