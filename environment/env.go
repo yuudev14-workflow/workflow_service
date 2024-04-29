@@ -1,0 +1,76 @@
+package environment
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/joho/godotenv"
+)
+
+var (
+	Settings = &SettingsData{}
+
+	// local variables
+	loggerMode = "DEBUG"
+)
+
+type SettingsData struct {
+	DB_URL      string
+	LOGGER_MODE string
+	MQ_URL      string
+}
+
+// load env based
+func LoadEnv(dest string) {
+	if dest == "" {
+		godotenv.Load("./.env")
+	} else {
+		godotenv.Load(dest)
+	}
+}
+
+// set constants environment
+func SetEnv() {
+	Settings.DB_URL = GetDbUrl()
+	Settings.LOGGER_MODE = GetLoggerLevel()
+	Settings.MQ_URL = GetDbUrl()
+}
+
+// function to retrieve contants in the env
+func Setup() {
+	LoadEnv("")
+	SetEnv()
+}
+
+func TestSetup(envDest string) {
+	LoadEnv(envDest)
+	SetEnv()
+}
+
+func GetDbUrl() string {
+	// postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}?sslmode=disable
+	DB_USER := os.Getenv("DB_USER")
+	DB_PASSWORD := os.Getenv("DB_PASSWORD")
+	DB_HOST := os.Getenv("DB_HOST")
+	DB_NAME := os.Getenv("DB_NAME")
+	return fmt.Sprintf("postgres://%v:%v@%v/%v?sslmode=disable", DB_USER, DB_PASSWORD, DB_HOST, DB_NAME)
+}
+
+func GetMQUrl() string {
+	// amqp://guest:guest@localhost:5672
+	MQ_USER := os.Getenv("DB_USER")
+	MQ_PASSWORD := os.Getenv("DB_PASSWORD")
+	MQ_HOST := os.Getenv("DB_HOST")
+	MQ_PORT := os.Getenv("DB_NAME")
+	return fmt.Sprintf("amqp://:%v:%v@%v:%v", MQ_USER, MQ_PASSWORD, MQ_HOST, MQ_PORT)
+}
+
+// get logger level
+func GetLoggerLevel() string {
+	val := os.Getenv("LOGGER_MODE")
+	if val == "" {
+		return loggerMode
+	}
+	return val
+
+}
