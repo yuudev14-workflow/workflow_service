@@ -14,6 +14,7 @@ var (
 )
 
 func ConnectToMQ() {
+	logging.Logger.Infof("connecting to message queue %v...", environment.Settings.MQ_URL)
 	conn, err := amqp.Dial(environment.Settings.MQ_URL)
 	if err != nil {
 		logging.Logger.Panicf("%v", err)

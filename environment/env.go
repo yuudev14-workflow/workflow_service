@@ -35,7 +35,7 @@ func LoadEnv(dest string) {
 func SetEnv() {
 	Settings.DB_URL = GetDbUrl()
 	Settings.LOGGER_MODE = GetLoggerLevel()
-	Settings.MQ_URL = GetDbUrl()
+	Settings.MQ_URL = GetMQUrl()
 	Settings.SenderQueueName = "workflow"
 	Settings.ReceiverQueueName = "workflow_processor"
 }
@@ -61,12 +61,12 @@ func GetDbUrl() string {
 }
 
 func GetMQUrl() string {
-	// amqp://guest:guest@localhost:5672
-	MQ_USER := os.Getenv("DB_USER")
-	MQ_PASSWORD := os.Getenv("DB_PASSWORD")
-	MQ_HOST := os.Getenv("DB_HOST")
-	MQ_PORT := os.Getenv("DB_NAME")
-	return fmt.Sprintf("amqp://:%v:%v@%v:%v", MQ_USER, MQ_PASSWORD, MQ_HOST, MQ_PORT)
+	// amqp://guest:guest@localhost:5672/
+	MQ_USER := os.Getenv("MQ_USER")
+	MQ_PASSWORD := os.Getenv("MQ_PASSWORD")
+	MQ_HOST := os.Getenv("MQ_HOST")
+	MQ_PORT := os.Getenv("MQ_PORT")
+	return fmt.Sprintf("amqp://%v:%v@%v:%v/", MQ_USER, MQ_PASSWORD, MQ_HOST, MQ_PORT)
 }
 
 // get logger level

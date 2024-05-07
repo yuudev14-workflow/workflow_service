@@ -1,5 +1,12 @@
 package utils
 
+type WorkflowData struct {
+	Graph        map[string][]string `json:"graph"`
+	CurrentNode  string              `json:"current_node"`
+	CurrentQueue []string            `json:"current_queue"`
+	Visited      []string            `json:"visited"`
+}
+
 func IsAcyclicGraph(graph map[string][]string) bool {
 	visit := make(Set[string])
 	stack := make(Set[string])
