@@ -9,6 +9,3 @@ type Workflows struct {
 	Name        string    `db:"name" json:"name"`
 	Description string    `db:"description" json:"description"`
 }
-
-type WorkflowRepository interface {
-}
