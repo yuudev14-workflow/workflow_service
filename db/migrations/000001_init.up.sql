@@ -10,21 +10,26 @@ CREATE TABLE
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
     name VARCHAR(50),
     description TEXT,
-    trigger_type VARCHAR(20) NOT NULL
+    trigger_type VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
   );
 
 CREATE TABLE
   IF NOT EXISTS schedulers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
     workflow_id UUID REFERENCES workflows (id) ON DELETE CASCADE,
-    cron VARCHAR(20)
+    cron VARCHAR(20),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
   );
 
 CREATE TABLE
   IF NOT EXISTS workflow_history (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
     workflow_id UUID REFERENCES workflows (id) ON DELETE CASCADE,
-    status TEXT
+    status VARCHAR(20),
+    triggered_at TIMESTAMP NOT NULL DEFAULT NOW()
   );
 
 CREATE TABLE
@@ -33,7 +38,9 @@ CREATE TABLE
     workflow_id UUID NOT NULL REFERENCES workflows (id) ON DELETE CASCADE,
     name VARCHAR(50),
     description TEXT,
-    parameters JSON
+    parameters JSON,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
   );
 
 CREATE TABLE
@@ -48,5 +55,6 @@ CREATE TABLE
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
     workflow_history_id UUID REFERENCES workflow_history (id) ON DELETE CASCADE,
     task_id UUID REFERENCES tasks (id) ON DELETE CASCADE,
-    status TEXT
+    status VARCHAR(20),
+    triggered_at TIMESTAMP NOT NULL DEFAULT NOW()
   );

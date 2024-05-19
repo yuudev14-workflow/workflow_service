@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/yuudev14-workflow/workflow-service/api"
+	"github.com/yuudev14-workflow/workflow-service/db"
 	"github.com/yuudev14-workflow/workflow-service/environment"
 	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
 	"github.com/yuudev14-workflow/workflow-service/pkg/mq"
@@ -17,6 +18,7 @@ import (
 func initApp() {
 	environment.Setup()
 	logging.Setup(environment.Settings.LOGGER_MODE)
+	db.SetupDB(environment.Settings.DB_URL)
 }
 func main() {
 	initApp()
