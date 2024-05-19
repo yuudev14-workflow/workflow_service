@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS task_history;
+DROP TABLE IF EXISTS edges;
+DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS workflow_history;
+DROP TABLE IF EXISTS schedulers;
+DROP TABLE IF EXISTS workflows;

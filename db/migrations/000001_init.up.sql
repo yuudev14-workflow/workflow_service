@@ -16,14 +16,14 @@ CREATE TABLE
 CREATE TABLE
   IF NOT EXISTS schedulers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
-    workflow_id UUID REFERENCES workflow_id (id) ON DELETE CASCADE,
+    workflow_id UUID REFERENCES workflows (id) ON DELETE CASCADE,
     cron VARCHAR(20)
   );
 
 CREATE TABLE
   IF NOT EXISTS workflow_history (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
-    workflow_id UUID REFERENCES workflow_id (id) ON DELETE CASCADE,
+    workflow_id UUID REFERENCES workflows (id) ON DELETE CASCADE,
     status TEXT
   );
 
