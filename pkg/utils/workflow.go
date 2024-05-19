@@ -9,27 +9,25 @@ type WorkflowData struct {
 
 func IsAcyclicGraph(graph map[string][]string) bool {
 	visit := make(Set[string])
-	stack := make(Set[string])
 
 	var dfs func(node string) bool
 	dfs = func(node string) bool {
-		if stack.Has(node) {
+		if visit.Has(node) {
 			return true
 		}
-		if visit.Has(node) {
+		if len(graph[node]) == 0 {
 			return false
 		}
 
 		visit.Add(node)
-		stack.Add(node)
 
 		for _, neighbor := range graph[node] {
 			if dfs(neighbor) {
 				return true
 			}
 		}
-
-		stack.Remove(node)
+		visit.Remove(node)
+		graph[node] = []string{}
 
 		return false
 	}

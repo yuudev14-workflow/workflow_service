@@ -21,12 +21,9 @@ func NewWorkflowController() *WorkflowController {
 func (w *WorkflowController) Trigger(c *gin.Context) {
 	response := rest.Response{C: c}
 	graph := map[string][]string{
-		"A": {"B", "C"},
-		"B": {"D"},
-		"C": {"E", "D"},
-		"D": {},
-		"E": {"F"},
-		"F": {},
+		"A": {"B"},
+		"B": {"C"},
+		"C": {},
 	}
 
 	currentNode := "A"

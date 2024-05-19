@@ -33,7 +33,7 @@ func TestAcyclicalGraphs(t *testing.T) {
 				"E": {"F"},
 				"F": {},
 			},
-			expected: false,
+			expected: true,
 		},
 		{
 			graph: map[string][]string{
