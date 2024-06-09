@@ -8,7 +8,7 @@ import (
 
 type WorkflowService interface {
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
-	UpdateWorkflow(id string, workflow dto.UpdateWorkflowPayload) (*models.Workflows, error)
+	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
 }
 
 type WorkflowServiceImpl struct {
@@ -27,6 +27,6 @@ func (w *WorkflowServiceImpl) CreateWorkflow(workflow dto.WorkflowPayload) (*mod
 }
 
 // UpdateWorkflow implements WorkflowService.
-func (w *WorkflowServiceImpl) UpdateWorkflow(id string, workflow dto.UpdateWorkflowPayload) (*models.Workflows, error) {
+func (w *WorkflowServiceImpl) UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error) {
 	return w.WorkflowRepository.UpdateWorkflow(id, workflow)
 }

@@ -51,7 +51,7 @@ func (w *WorkflowController) CreateWorkflow(c *gin.Context) {
 }
 
 func (w *WorkflowController) UpdateWorkflow(c *gin.Context) {
-	var body dto.UpdateWorkflowPayload
+	var body dto.UpdateWorkflowData
 	response := rest.Response{C: c}
 	workflowId := c.Param("workflow_id")
 

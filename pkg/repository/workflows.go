@@ -12,7 +12,7 @@ import (
 
 type WorkflowRepository interface {
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
-	UpdateWorkflow(id string, workflow dto.UpdateWorkflowPayload) (*models.Workflows, error)
+	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
 }
 
 type WorkflowRepositoryImpl struct {
@@ -31,12 +31,12 @@ func (w *WorkflowRepositoryImpl) CreateWorkflow(workflow dto.WorkflowPayload) (*
 		w.DB,
 		`INSERT INTO workflows (name, description, trigger_type) 
 		VALUES ($1, $2, $3) 
-		RETURNING *`, workflow.Name, workflow.Description.String, workflow.TriggerType,
+		RETURNING *`, workflow.Name, workflow.Description, workflow.TriggerType,
 	)
 }
 
 // updateWorkflow implements WorkflowRepository.
-func (w *WorkflowRepositoryImpl) UpdateWorkflow(id string, workflow dto.UpdateWorkflowPayload) (*models.Workflows, error) {
+func (w *WorkflowRepositoryImpl) UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error) {
 
 	values, queries := GenerateKeyValueQuery(map[string]types.Nullable[any]{
 		"name":         workflow.Name.ToNullableAny(),
