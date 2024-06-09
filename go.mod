@@ -33,6 +33,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rabbitmq/amqp091-go v1.9.0 // indirect
+	github.com/samber/mo v1.11.0 // indirect
 	github.com/shiena/ansicolor v0.0.0-20151119151921-a422bbe96644 // indirect
 	github.com/swaggo/swag v1.16.3 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
@@ -50,6 +51,7 @@ require (
 require (
 	github.com/astaxie/beego v1.12.3
 	github.com/google/uuid v1.6.0
+	github.com/guregu/null v4.0.0+incompatible
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9

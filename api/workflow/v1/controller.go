@@ -2,10 +2,12 @@ package workflow_controller_v1
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/streadway/amqp"
+	"github.com/yuudev14-workflow/workflow-service/dto"
 	"github.com/yuudev14-workflow/workflow-service/pkg/mq"
 	rest "github.com/yuudev14-workflow/workflow-service/pkg/rests"
 	"github.com/yuudev14-workflow/workflow-service/pkg/utils"
@@ -16,6 +18,23 @@ type WorkflowController struct {
 
 func NewWorkflowController() *WorkflowController {
 	return &WorkflowController{}
+}
+
+func (w *WorkflowController) UpdateWorkflow(c *gin.Context) {
+	var payload dto.WorkflowPayload
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	fmt.Printf("Description %v \n", payload.Description)
+	fmt.Printf("Name %v \n", payload.Name)
+	fmt.Printf("Trigger Type %v \n", payload.TriggerType)
+
+	c.JSON(http.StatusCreated, gin.H{
+		"name": payload.Name.Value,
+		"set":  payload.Name.Set,
+	})
+
 }
 
 func (w *WorkflowController) Trigger(c *gin.Context) {

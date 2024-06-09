@@ -8,8 +8,9 @@ import (
 func SetupWorkflowController(route *gin.RouterGroup) {
 	workflowController := workflow_controller_v1.NewWorkflowController()
 
-	r := route.Group("workflows")
+	r := route.Group("v1/workflows")
 	{
-		r.POST("/v1/trigger", workflowController.Trigger)
+		r.POST("/trigger", workflowController.Trigger)
+		r.PUT("", workflowController.UpdateWorkflow)
 	}
 }
