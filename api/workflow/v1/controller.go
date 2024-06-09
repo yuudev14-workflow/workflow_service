@@ -2,7 +2,6 @@ package workflow_controller_v1
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -26,9 +25,6 @@ func (w *WorkflowController) UpdateWorkflow(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	fmt.Printf("Description %v \n", payload.Description)
-	fmt.Printf("Name %v \n", payload.Name)
-	fmt.Printf("Trigger Type %v \n", payload.TriggerType)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"name": payload.Name.Value,

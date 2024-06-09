@@ -17,3 +17,11 @@ func (i *Nullable[T]) UnmarshalJSON(data []byte) error {
 	i.Value = temp
 	return nil
 }
+
+func (i *Nullable[T]) ToNullableAny() Nullable[any] {
+	if i.Value == nil {
+		return Nullable[any]{Value: nil, Set: i.Set}
+	}
+	value := any(*i.Value)
+	return Nullable[any]{Value: &value, Set: i.Set}
+}

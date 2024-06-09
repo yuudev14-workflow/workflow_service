@@ -6,6 +6,7 @@ import (
 
 type WorkflowPayload struct {
 	Name        types.Nullable[string] `json:"name,omitempty"`
+	Name2       string                 `json:"name2"`
 	Description types.Nullable[string] `json:"description,omitempty"`
 	TriggerType types.Nullable[string] `json:"trigger_type,omitempty"`
 }
