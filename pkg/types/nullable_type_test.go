@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"database/sql"
 	"encoding/json"
 	"testing"
 
@@ -9,7 +10,7 @@ import (
 )
 
 type TestStruct struct {
-	Name types.Nullable[string] `json:"name"`
+	Name types.Nullable[sql.NullString] `json:"name"`
 }
 
 func TestNullableType(t *testing.T) {

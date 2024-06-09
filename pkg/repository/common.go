@@ -66,16 +66,26 @@ func Transact(DB *sqlx.DB, fn func(*sqlx.Tx) error) error {
 	return tx.Commit()
 }
 
-func GenerateKeyValueQuery(payload map[string]types.Nullable[any]) string {
+func GenerateKeyValueQuery(payload map[string]types.Nullable[any], index int) ([]any, string) {
 
+	var values []any
 	var queries []string
+	logging.Logger.Debugf("payload: %v", payload)
 
 	for key, val := range payload {
+		logging.Logger.Debugf("index: %v", index)
+		logging.Logger.Debugf("key: %v", key)
+		logging.Logger.Debugf("set: %v", val.Set)
 		if val.Set {
 
-			queries = append(queries, fmt.Sprintf("%v = %v", key, val.Value))
+			queries = append(queries, fmt.Sprintf("%v = $%v", key, index))
+			index += 1
+			values = append(values, val.Value)
 		}
 	}
 
-	return strings.Join(queries, ",")
+	logging.Logger.Debugf("queries: %v", queries)
+	logging.Logger.Debugf("values: %v", values)
+
+	return values, strings.Join(queries, ",")
 }
