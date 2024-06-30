@@ -39,9 +39,11 @@ func (t *TasksRepositoryImpl) UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tas
 
 	valueQuery := strings.Join(values, ",")
 
+	statement := fmt.Sprintf(queries.UPSERT_TASK, valueQuery)
+
 	return DbExecAndReturnMany[models.Tasks](
 		tx,
-		queries.UPSERT_TASK, valueQuery,
+		statement,
 	)
 }
 

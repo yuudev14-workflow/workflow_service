@@ -8,6 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/yuudev14-workflow/workflow-service/db/queries"
 	"github.com/yuudev14-workflow/workflow-service/models"
+	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
 )
 
 type EdgeRepository interface {
@@ -37,9 +38,12 @@ func (e *EdgeRepositoryImpl) InsertEdges(tx *sqlx.Tx, edges []models.Edges) ([]m
 
 	valueQuery := strings.Join(values, ",")
 
+	statement := fmt.Sprintf(queries.INSERT_EDGES, valueQuery)
+	logging.Logger.Debugf("insert edge query: %v", statement)
+
 	return DbExecAndReturnMany[models.Edges](
 		tx,
-		queries.INSERT_EDGES, valueQuery,
+		statement,
 	)
 }
 

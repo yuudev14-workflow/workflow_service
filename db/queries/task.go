@@ -2,7 +2,7 @@ package queries
 
 const UPSERT_TASK = `
 INSERT INTO tasks (workflow_id, name, description, parameters)
-VALUES $1
+VALUES %v
 ON DUPLICATE KEY UPDATE
 	name = VALUES(name),
 	description = VALUES(description),
