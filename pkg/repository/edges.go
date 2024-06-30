@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/yuudev14-workflow/workflow-service/db/queries"
 	"github.com/yuudev14-workflow/workflow-service/models"
 )
 
@@ -24,7 +25,7 @@ func NewEdgeRepositoryImpl(db *sqlx.DB) EdgeRepository {
 	}
 }
 
-// InsertEdges implements EdgeRepository.
+// accepts multiple edge structs to be added in the database in a transaction matter
 func (e *EdgeRepositoryImpl) InsertEdges(tx *sqlx.Tx, edges []models.Edges) ([]models.Edges, error) {
 	var values []string
 
@@ -38,9 +39,7 @@ func (e *EdgeRepositoryImpl) InsertEdges(tx *sqlx.Tx, edges []models.Edges) ([]m
 
 	return DbExecAndReturnMany[models.Edges](
 		tx,
-		`INSERT INTO tasks (destination_id, source_id)
-		VALUES $1
-		RETURNING *`, valueQuery,
+		queries.INSERT_EDGES, valueQuery,
 	)
 }
 
@@ -51,7 +50,7 @@ func (e *EdgeRepositoryImpl) DeleteEdges(tx *sqlx.Tx, edgeIds []uuid.UUID) error
 		stringIds[i] = u.String()
 	}
 
-	_, err := tx.Exec(`DELETE FROM tasks WHERE id in ()`, strings.Join(stringIds, ","))
+	_, err := tx.Exec(queries.DELETE_EDGES, strings.Join(stringIds, ","))
 
 	return err
 }

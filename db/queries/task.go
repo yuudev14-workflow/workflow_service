@@ -8,4 +8,4 @@ ON DUPLICATE KEY UPDATE
 	description = VALUES(description),
 	parameters = VALUES(parameters);
 `
-const DELETE_TASKS = `DELETE FROM tasks WHERE id in $1`
+const DELETE_TASKS = `DELETE FROM tasks WHERE id in $1;`
