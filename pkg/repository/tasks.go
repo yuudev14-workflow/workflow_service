@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/yuudev14-workflow/workflow-service/db/queries"
 	"github.com/yuudev14-workflow/workflow-service/models"
 )
 
@@ -37,18 +38,10 @@ func (t *TasksRepositoryImpl) UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tas
 	}
 
 	valueQuery := strings.Join(values, ",")
-	statement := `
-	INSERT INTO tasks (workflow_id, name, description, parameters)
-	VALUES $1
-	ON DUPLICATE KEY UPDATE
-		name = VALUES(name),
-		description = VALUES(description),
-		parameters = VALUES(parameters);
-	`
 
 	return DbExecAndReturnMany[models.Tasks](
 		tx,
-		statement, valueQuery,
+		queries.UPSERT_TASK, valueQuery,
 	)
 }
 
@@ -59,7 +52,7 @@ func (t *TasksRepositoryImpl) DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) erro
 		stringIds[i] = u.String()
 	}
 
-	_, err := tx.Exec(`DELETE FROM tasks WHERE id in ()`, strings.Join(stringIds, ","))
+	_, err := tx.Exec(queries.DELETE_TASKS, strings.Join(stringIds, ","))
 
 	return err
 }
