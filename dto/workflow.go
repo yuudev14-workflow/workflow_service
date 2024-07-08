@@ -10,14 +10,14 @@ type UpdateWorkflowData struct {
 	TriggerType types.Nullable[string] `json:"trigger_type,omitempty"`
 }
 
-type Tasks struct {
+type Task struct {
 	Name        string                 `db:"name" json:"name"`
 	Description string                 `db:"description" json:"description"`
 	Parameters  map[string]interface{} `db:"parameters" json:"parameters"`
 }
 
 type UpdateWorkflowtasks struct {
-	Nodes []Tasks             `json:"nodes"`
+	Nodes []Task              `json:"nodes"`
 	Edges map[string][]string `json:"edges"`
 }
 

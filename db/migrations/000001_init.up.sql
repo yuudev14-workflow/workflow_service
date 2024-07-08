@@ -40,7 +40,9 @@ CREATE TABLE
     description TEXT,
     parameters JSON,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT unique_workflow_name UNIQUE (workflow_id, name)
   );
 
 CREATE TABLE

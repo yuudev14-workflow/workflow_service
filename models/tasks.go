@@ -12,7 +12,7 @@ type Tasks struct {
 	Status      string                 `db:"status" json:"status"`
 	Name        string                 `db:"name" json:"name"`
 	Description string                 `db:"description" json:"description"`
-	Parameters  map[string]interface{} `db:"parameters" json:"parameters"`
+	Parameters  map[string]interface{} `db:"parameters" json:"parameters,omitempty"`
 	CreatedAt   time.Time              `db:"created_at" json:"created_at"`
 	UpdatedAt   time.Time              `db:"updated_at" json:"updated_at"`
 }

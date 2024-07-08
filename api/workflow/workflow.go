@@ -11,12 +11,16 @@ import (
 func SetupWorkflowController(route *gin.RouterGroup) {
 	workflowRepository := repository.NewWorkflowRepositoryImpl(db.DB)
 	workflowService := service.NewWorkflowService(workflowRepository)
-	workflowController := workflow_controller_v1.NewWorkflowController(workflowService)
+
+	taskRepository := repository.NewTaskRepositoryImpl(db.DB)
+	taskService := service.NewTaskServiceImpl(taskRepository)
+	workflowController := workflow_controller_v1.NewWorkflowController(workflowService, taskService)
 
 	r := route.Group("v1/workflows")
 	{
 		r.POST("/trigger", workflowController.Trigger)
 		r.POST("/", workflowController.CreateWorkflow)
 		r.PUT("/:workflow_id", workflowController.UpdateWorkflow)
+		r.PUT("/tasks/:workflow_id", workflowController.UpdateWorkflowTasks)
 	}
 }
