@@ -63,6 +63,19 @@ func (w *WorkflowController) UpdateWorkflow(c *gin.Context) {
 		return
 	}
 
+	// node to insert
+	// node to update
+	// node to delete
+
+	// 1. check if node exists in the existing nodes else update
+	// 2. if node not in new nodes to be updated, delete
+
+	// get all edges
+	// 1. check if node exists in the existing nodes else update
+	// 2. if node not in new nodes to be updated, delete
+
+	// save everything
+
 	workflow, err := w.WorkflowService.UpdateWorkflow(workflowId, body)
 
 	logging.Logger.Debug("added workflow...")
