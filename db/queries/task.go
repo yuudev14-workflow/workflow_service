@@ -10,4 +10,3 @@ ON CONFLICT (workflow_id, name) DO UPDATE
        parameters = EXCLUDED.parameters,
        updated_at = NOW();
 `
-const DELETE_TASKS = `DELETE FROM tasks WHERE id IN = ANY($1::UUID[]);`

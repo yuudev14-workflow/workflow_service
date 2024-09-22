@@ -41,6 +41,7 @@ func DbExecAndReturnOne[T any](DB *sqlx.DB, query string, args ...interface{}) (
 
 func DbExecAndReturnMany[T any](execer sqlx.ExtContext, query string, args ...interface{}) ([]T, error) {
 	var dest []T
+	query = execer.Rebind(query)
 	logging.Logger.Debug(query, args)
 	err := sqlx.SelectContext(context.Background(), execer, &dest, query, args...)
 	if err != nil {

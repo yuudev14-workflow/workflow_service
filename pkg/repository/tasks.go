@@ -1,9 +1,6 @@
 package repository
 
 import (
-	"fmt"
-	"strings"
-
 	sq "github.com/Masterminds/squirrel"
 
 	"github.com/google/uuid"
@@ -43,48 +40,40 @@ func (t *TasksRepositoryImpl) GetTasksByWorkflowId(workflowId string) []models.T
 // if task does not exist yet add the task in the database
 // else update the content of the task
 func (t *TasksRepositoryImpl) UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tasks []models.Tasks) ([]models.Tasks, error) {
-	var values []string
+
+	statement := sq.Insert("tasks").Columns("workflow_id", "name", "description")
 
 	for _, val := range tasks {
-		values = append(values,
-			fmt.Sprintf(`('%v', '%v', '%v')`, workflowId, val.Name, val.Description),
-		)
+		statement = statement.Values(workflowId, val.Name, val.Description)
 	}
 
-	valueQuery := strings.Join(values, ",")
+	sql, args, err := statement.Suffix(`
+		ON CONFLICT (workflow_id, name) DO UPDATE
+   	SET description = EXCLUDED.description,
+       parameters = EXCLUDED.parameters,
+       updated_at = NOW()`).ToSql()
 
-	statement := fmt.Sprintf(queries.UPSERT_TASK, valueQuery)
-	// insertBuilder := sq.Insert("tasks").
-	// 	Columns("workflow_id", "name", "description")
-	// for _, v := range tasks {
-	// 	insertBuilder = insertBuilder.Values(workflowId.String(),
-	// 		v.Name,
-	// 		v.Description,
-	// 	)
-	// }
+	logging.Logger.Debug("SQL: ", sql)
 
-	// conflictBuilder := insertBuilder.Suffix(`
-	// ON CONFLICT (workflow_id, name) DO UPDATE
-	//   SET description = EXCLUDED.description,
-	//       parameters = EXCLUDED.parameters,
-	//       updated_at = NOW();`)
-
-	// Build the SQL query and arguments
-	// sqlQuery, args, err := insertBuilder.ToSql()
-	// if err != nil {
-	// 	return nil, err
-	// }
+	if err != nil {
+		logging.Logger.Error("Failed to build SQL query", err)
+		return nil, err
+	}
 
 	return DbExecAndReturnMany[models.Tasks](
 		tx,
-		statement,
+		sql,
+		args...,
 	)
 }
 
 // Delete multiple tasks based on the taskIds
 func (t *TasksRepositoryImpl) DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error {
 	sql, args, err := sq.Delete("tasks").Where(sq.Eq{"id": taskIds}).ToSql()
-	logging.Logger.Debug(sql, args, err)
+	if err != nil {
+		logging.Logger.Error("Failed to build SQL query", err)
+		return err
+	}
 	sql = tx.Rebind(sql)
 	_, err = tx.Query(sql, args...)
 	logging.Logger.Warn(err)
