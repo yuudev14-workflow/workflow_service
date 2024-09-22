@@ -1,12 +1,10 @@
 package service
 
 import (
-	"fmt"
-	"strings"
+	sq "github.com/Masterminds/squirrel"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	"github.com/yuudev14-workflow/workflow-service/db/queries"
 	"github.com/yuudev14-workflow/workflow-service/models"
 	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
 	"github.com/yuudev14-workflow/workflow-service/pkg/repository"
@@ -29,33 +27,41 @@ func NewEdgeRepositoryImpl(db *sqlx.DB) EdgeService {
 
 // accepts multiple edge structs to be added in the database in a transaction matter
 func (e *EdgeServiceImpl) InsertEdges(tx *sqlx.Tx, edges []models.Edges) ([]models.Edges, error) {
-	var values []string
+	statement := sq.Insert("tasks").Columns("destination_id", "source_id")
 
 	for _, val := range edges {
-		values = append(values,
-			fmt.Sprintf(`(%v, %v)`, val.DestinationID, val.SourceID),
-		)
+		statement = statement.Values(val.DestinationID, val.SourceID)
 	}
 
-	valueQuery := strings.Join(values, ",")
+	sql, args, err := statement.ToSql()
 
-	statement := fmt.Sprintf(queries.INSERT_EDGES, valueQuery)
-	logging.Logger.Debugf("insert edge query: %v", statement)
+	logging.Logger.Debug("UpsertTasks SQL: ", sql)
+	logging.Logger.Debug("UpsertTasks Args: ", args)
+
+	if err != nil {
+		logging.Logger.Error("Failed to build SQL query", err)
+		return nil, err
+	}
 
 	return repository.DbExecAndReturnMany[models.Edges](
 		tx,
-		statement,
+		sql,
+		args...,
 	)
 }
 
 // accepts multiple edge ids to be deleted
 func (e *EdgeServiceImpl) DeleteEdges(tx *sqlx.Tx, edgeIds []uuid.UUID) error {
-	stringIds := make([]string, len(edgeIds))
-	for i, u := range edgeIds {
-		stringIds[i] = u.String()
+	sql, args, err := sq.Delete("edges").Where(sq.Eq{"id": edgeIds}).ToSql()
+	logging.Logger.Debug("DeleteEdges SQL: ", sql)
+	logging.Logger.Debug("DeleteEdges Args: ", args)
+	if err != nil {
+		logging.Logger.Error("Failed to build SQL query", err)
+		return err
 	}
-
-	_, err := tx.Exec(queries.DELETE_EDGES, strings.Join(stringIds, ","))
+	sql = tx.Rebind(sql)
+	_, err = tx.Query(sql, args...)
+	logging.Logger.Warn(err)
 
 	return err
 }
