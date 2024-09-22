@@ -53,7 +53,8 @@ func (t *TasksRepositoryImpl) UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tas
        parameters = EXCLUDED.parameters,
        updated_at = NOW()`).ToSql()
 
-	logging.Logger.Debug("SQL: ", sql)
+	logging.Logger.Debug("UpsertTasks SQL: ", sql)
+	logging.Logger.Debug("UpsertTasks Args: ", args)
 
 	if err != nil {
 		logging.Logger.Error("Failed to build SQL query", err)
@@ -70,6 +71,8 @@ func (t *TasksRepositoryImpl) UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tas
 // Delete multiple tasks based on the taskIds
 func (t *TasksRepositoryImpl) DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error {
 	sql, args, err := sq.Delete("tasks").Where(sq.Eq{"id": taskIds}).ToSql()
+	logging.Logger.Debug("DeleteTasks SQL: ", sql)
+	logging.Logger.Debug("DeleteTasks Args: ", args)
 	if err != nil {
 		logging.Logger.Error("Failed to build SQL query", err)
 		return err
