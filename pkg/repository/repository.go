@@ -3,8 +3,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"strings"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -14,6 +12,7 @@ import (
 
 func DbExecAndReturnOne[T any](DB *sqlx.DB, query string, args ...interface{}) (*T, error) {
 	var dest T
+	query = DB.Rebind(query)
 	logging.Logger.Debug(query, args)
 	err := DB.Get(&dest, query, args...)
 	if err != nil {
@@ -88,26 +87,19 @@ func Transact[T any](DB *sqlx.DB, fn func(*sqlx.Tx) (*T, error)) (*T, error) {
 	return result, nil
 }
 
-func GenerateKeyValueQuery(payload map[string]types.Nullable[any], index int) ([]any, string) {
-
-	var values []any
-	var queries []string
+func GenerateKeyValueQuery(payload map[string]types.Nullable[any]) map[string]interface{} {
+	objects := make(map[string]interface{})
 	logging.Logger.Debugf("payload: %v", payload)
 
 	for key, val := range payload {
-		logging.Logger.Debugf("index: %v", index)
 		logging.Logger.Debugf("key: %v", key)
 		logging.Logger.Debugf("set: %v", val.Set)
 		if val.Set {
-
-			queries = append(queries, fmt.Sprintf("%v = $%v", key, index))
-			index += 1
-			values = append(values, val.Value)
+			objects[key] = val.Value
 		}
 	}
 
-	logging.Logger.Debugf("queries: %v", queries)
-	logging.Logger.Debugf("values: %v", values)
+	logging.Logger.Debugf("objects: %v", objects)
 
-	return values, strings.Join(queries, ",")
+	return objects
 }

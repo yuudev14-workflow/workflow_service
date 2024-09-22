@@ -1,4 +1,4 @@
-package repository
+package service
 
 import (
 	"fmt"
@@ -9,25 +9,26 @@ import (
 	"github.com/yuudev14-workflow/workflow-service/db/queries"
 	"github.com/yuudev14-workflow/workflow-service/models"
 	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
+	"github.com/yuudev14-workflow/workflow-service/pkg/repository"
 )
 
-type EdgeRepository interface {
+type EdgeService interface {
 	InsertEdges(tx *sqlx.Tx, edges []models.Edges) ([]models.Edges, error)
 	DeleteEdges(tx *sqlx.Tx, edgeIds []uuid.UUID) error
 }
 
-type EdgeRepositoryImpl struct {
+type EdgeServiceImpl struct {
 	*sqlx.DB
 }
 
-func NewEdgeRepositoryImpl(db *sqlx.DB) EdgeRepository {
-	return &EdgeRepositoryImpl{
+func NewEdgeRepositoryImpl(db *sqlx.DB) EdgeService {
+	return &EdgeServiceImpl{
 		DB: db,
 	}
 }
 
 // accepts multiple edge structs to be added in the database in a transaction matter
-func (e *EdgeRepositoryImpl) InsertEdges(tx *sqlx.Tx, edges []models.Edges) ([]models.Edges, error) {
+func (e *EdgeServiceImpl) InsertEdges(tx *sqlx.Tx, edges []models.Edges) ([]models.Edges, error) {
 	var values []string
 
 	for _, val := range edges {
@@ -41,14 +42,14 @@ func (e *EdgeRepositoryImpl) InsertEdges(tx *sqlx.Tx, edges []models.Edges) ([]m
 	statement := fmt.Sprintf(queries.INSERT_EDGES, valueQuery)
 	logging.Logger.Debugf("insert edge query: %v", statement)
 
-	return DbExecAndReturnMany[models.Edges](
+	return repository.DbExecAndReturnMany[models.Edges](
 		tx,
 		statement,
 	)
 }
 
 // accepts multiple edge ids to be deleted
-func (e *EdgeRepositoryImpl) DeleteEdges(tx *sqlx.Tx, edgeIds []uuid.UUID) error {
+func (e *EdgeServiceImpl) DeleteEdges(tx *sqlx.Tx, edgeIds []uuid.UUID) error {
 	stringIds := make([]string, len(edgeIds))
 	for i, u := range edgeIds {
 		stringIds[i] = u.String()
