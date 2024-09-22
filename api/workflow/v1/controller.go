@@ -171,8 +171,9 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 	if len(nodeToUpsert) > 0 {
 		w.TaskService.UpsertTasks(tx, workflowUUID, nodeToUpsert)
 	}
-
+	logging.Logger.Debugf("node to delete: %v", nodeToDelete)
 	if len(nodeToDelete) > 0 {
+		logging.Logger.Debugf("node to delete: %v", nodeToDelete)
 		w.TaskService.DeleteTasks(tx, nodeToDelete)
 
 	}
@@ -188,6 +189,7 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 	commitErr := tx.Commit()
 
 	if commitErr != nil {
+		logging.Logger.Error(commitErr)
 		response.ResponseError(http.StatusInternalServerError, commitErr)
 		return
 	}
