@@ -94,7 +94,7 @@ func (w *WorkflowController) UpsertTasks(
 	for _, node := range nodes {
 		nodeToUpsert = append(nodeToUpsert, models.Tasks{
 			Name:        node.Name,
-			Parameters:  json.RawMessage(node.Parameters),
+			Parameters:  node.Parameters,
 			Description: node.Description,
 		})
 	}
