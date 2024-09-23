@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 	"github.com/streadway/amqp"
 	"github.com/yuudev14-workflow/workflow-service/db"
 	"github.com/yuudev14-workflow/workflow-service/dto"
@@ -21,12 +22,14 @@ import (
 type WorkflowController struct {
 	WorkflowService service.WorkflowService
 	TaskService     service.TaskService
+	EdgeService     service.EdgeService
 }
 
-func NewWorkflowController(WorkflowService service.WorkflowService, TaskService service.TaskService) *WorkflowController {
+func NewWorkflowController(WorkflowService service.WorkflowService, TaskService service.TaskService, EdgeService service.EdgeService) *WorkflowController {
 	return &WorkflowController{
 		WorkflowService: WorkflowService,
 		TaskService:     TaskService,
+		EdgeService:     EdgeService,
 	}
 }
 
@@ -94,6 +97,145 @@ func (w *WorkflowController) UpdateWorkflow(c *gin.Context) {
 
 }
 
+func (w *WorkflowController) UpsertTasks(
+	tx *sqlx.Tx,
+	workflowUUID uuid.UUID,
+	nodes []dto.Task,
+) ([]models.Tasks, error) {
+	// node to update
+	var nodeToUpsert []models.Tasks
+	for _, node := range nodes {
+		nodeToUpsert = append(nodeToUpsert, models.Tasks{
+			Name:        node.Name,
+			Parameters:  json.RawMessage(node.Parameters),
+			Description: node.Description,
+		})
+	}
+
+	logging.Logger.Debugf("node to add: %v", nodeToUpsert)
+	// save the tasks
+	if len(nodeToUpsert) > 0 {
+		return w.TaskService.UpsertTasks(tx, workflowUUID, nodeToUpsert)
+	}
+	return nil, nil
+}
+
+func (w *WorkflowController) InsertEdges(
+	tx *sqlx.Tx,
+	workflowUUID uuid.UUID,
+	edges map[string][]string,
+	tasks []models.Tasks,
+) error {
+	// node to update
+	var edgeToInsert []models.Edges
+	tasksMap := make(map[string]uuid.UUID)
+
+	// create a taskmap with name and uuid of the task to easily get the uuid from the edges
+	for _, task := range tasks {
+		tasksMap[task.Name] = task.ID
+	}
+
+	for key, values := range edges {
+		for _, val := range values {
+			sourceId, sourceIdOk := tasksMap[key]
+			destinationID, destinationIdOk := tasksMap[val]
+			if sourceIdOk && destinationIdOk {
+				edgeToInsert = append(edgeToInsert, models.Edges{
+					SourceID:      sourceId.String(),
+					DestinationID: destinationID.String(),
+				})
+			}
+		}
+	}
+
+	logging.Logger.Debugf("edges to add: %v", edgeToInsert)
+	// save the edges
+	if len(edgeToInsert) > 0 {
+		_, err := w.EdgeService.InsertEdges(tx, edgeToInsert)
+		return err
+	}
+	return nil
+}
+
+func (w *WorkflowController) DeleteTasks(
+	tx *sqlx.Tx,
+	workflowUUID uuid.UUID,
+	nodes []dto.Task,
+) error {
+	// node to delete
+	var nodeToDelete []uuid.UUID
+	tasksBodyMap := make(map[string]bool)
+
+	// verify nodes name should be unique
+	tasks := w.TaskService.GetTasksByWorkflowId(workflowUUID.String())
+	logging.Logger.Debugf("tasks: %v", tasks)
+
+	for _, node := range nodes {
+		tasksBodyMap[node.Name] = true
+	}
+	// 2. if node not in new nodes to be updated, delete
+
+	for _, node := range tasks {
+		_, ok := tasksBodyMap[node.Name]
+		if !ok {
+			nodeToDelete = append(nodeToDelete, node.ID)
+		}
+	}
+
+	logging.Logger.Debugf("node to delete: %v", nodeToDelete)
+	if len(nodeToDelete) > 0 {
+		logging.Logger.Debugf("node to delete: %v", nodeToDelete)
+		err := w.TaskService.DeleteTasks(tx, nodeToDelete)
+		return err
+
+	}
+	return nil
+}
+
+func (w *WorkflowController) DeleteEdges(
+	tx *sqlx.Tx,
+	workflowUUID uuid.UUID,
+	edges map[string][]string,
+) error {
+
+	var edgeToDelete []uuid.UUID
+	edgesMap := make(map[[2]string]bool)
+
+	if len(edges) == 0 {
+		return w.EdgeService.DeleteAllWorkflowEdges(tx, workflowUUID.String())
+	}
+
+	workflowEdges, workflowEdgesErr := w.EdgeService.GetEdgesByWorkflowId(workflowUUID.String())
+	logging.Logger.Debug("workflow edges", workflowEdges)
+
+	if workflowEdgesErr != nil {
+		logging.Logger.Error(workflowEdgesErr)
+		return workflowEdgesErr
+	}
+
+	for key, values := range edges {
+		for _, val := range values {
+			edgesMap[[2]string{key, val}] = true
+		}
+	}
+
+	for _, edge := range workflowEdges {
+		_, ok := edgesMap[[2]string{edge.SourceTaskName, edge.DestinationTaskName}]
+		if !ok {
+			edgeToDelete = append(edgeToDelete, edge.ID)
+		}
+	}
+
+	logging.Logger.Debugf("edge to delete: %v", edgeToDelete)
+	if len(edgeToDelete) > 0 {
+		deleteEdgesError := w.EdgeService.DeleteEdges(tx, edgeToDelete)
+		return deleteEdgesError
+
+	}
+	return nil
+
+}
+
 func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 	var body dto.UpdateWorkflowtasks
 	response := rest.Response{C: c}
@@ -113,52 +255,6 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 		return
 	}
 
-	// verify nodes name should be unique
-	tasks := w.TaskService.GetTasksByWorkflowId(workflowId)
-	logging.Logger.Debugf("tasks: %v", tasks)
-	tasksMap := make(map[string]models.Tasks)
-	tasksBodyMap := make(map[string]bool)
-
-	for _, task := range tasks {
-		tasksMap[task.Name] = task
-	}
-	for _, node := range body.Nodes {
-		tasksBodyMap[node.Name] = true
-	}
-
-	// // node to insert
-	// var nodeToInsert []dto.Task
-	// // node to update
-	// var nodeToUpdate []dto.Task
-
-	// node to update
-	var nodeToUpsert []models.Tasks
-	// node to delete
-	var nodeToDelete []uuid.UUID
-
-	// 1. check if node exists in the existing nodes else update
-	for _, node := range body.Nodes {
-		// _, ok := tasksMap[node.Name]
-		// if ok {
-		// 	nodeToUpdate = append(nodeToUpdate, node)
-		// } else {
-		// 	nodeToInsert = append(nodeToInsert, node)
-		// }
-		nodeToUpsert = append(nodeToUpsert, models.Tasks{
-			Name:        node.Name,
-			Parameters:  node.Parameters,
-			Description: node.Description,
-		})
-	}
-	// 2. if node not in new nodes to be updated, delete
-
-	for _, node := range tasks {
-		_, ok := tasksBodyMap[node.Name]
-		if !ok {
-			nodeToDelete = append(nodeToDelete, node.ID)
-		}
-	}
-
 	workflowUUID, err := uuid.Parse(workflowId)
 
 	if err != nil {
@@ -166,37 +262,39 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 		return
 	}
 
-	logging.Logger.Debugf("node to add: %v", nodeToUpsert)
-	// save the tasks
-	if len(nodeToUpsert) > 0 {
-		w.TaskService.UpsertTasks(tx, workflowUUID, nodeToUpsert)
+	deleteEdgesErr := w.DeleteEdges(tx, workflowUUID, body.Edges)
+	if deleteEdgesErr != nil {
+		logging.Logger.Error(deleteEdgesErr)
+		tx.Rollback()
+		response.ResponseError(http.StatusBadRequest, deleteEdgesErr)
+		return
 	}
-	logging.Logger.Debugf("node to delete: %v", nodeToDelete)
-	if len(nodeToDelete) > 0 {
-		logging.Logger.Debugf("node to delete: %v", nodeToDelete)
-		w.TaskService.DeleteTasks(tx, nodeToDelete)
-
+	insertedTasks, upsertTasksErr := w.UpsertTasks(tx, workflowUUID, body.Nodes)
+	if upsertTasksErr != nil {
+		logging.Logger.Error(upsertTasksErr)
+		tx.Rollback()
+		response.ResponseError(http.StatusBadRequest, upsertTasksErr)
+		return
 	}
-
-	// get all edges
-	// convert edges into ids
-	// 1. check if node exists in the existing nodes else update
-	// 2. if node not in new nodes to be updated, delete
-
-	// save everything
+	w.DeleteTasks(tx, workflowUUID, body.Nodes)
+	w.InsertEdges(tx, workflowUUID, body.Edges, insertedTasks)
 
 	logging.Logger.Debug("added workflow...")
 	commitErr := tx.Commit()
 
 	if commitErr != nil {
 		logging.Logger.Error(commitErr)
+		tx.Rollback()
 		response.ResponseError(http.StatusInternalServerError, commitErr)
 		return
 	}
 
 	newTasks := w.TaskService.GetTasksByWorkflowId(workflowId)
-	response.Response(http.StatusAccepted, newTasks)
-	return
+	newEdges, _ := w.EdgeService.GetEdgesByWorkflowId(workflowId)
+	response.Response(http.StatusAccepted, gin.H{
+		"tasks": newTasks,
+		"edges": newEdges,
+	})
 }
 
 func (w *WorkflowController) Trigger(c *gin.Context) {

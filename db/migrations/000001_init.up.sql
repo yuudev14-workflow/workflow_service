@@ -49,7 +49,9 @@ CREATE TABLE
   IF NOT EXISTS edges (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
     destination_id UUID REFERENCES tasks (id) ON DELETE CASCADE,
-    source_id UUID REFERENCES tasks (id) ON DELETE CASCADE
+    source_id UUID REFERENCES tasks (id) ON DELETE CASCADE,
+
+    CONSTRAINT unique_source_destination UNIQUE (source_id, destination_id)
   );
 
 CREATE TABLE

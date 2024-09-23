@@ -9,9 +9,9 @@ import (
 
 func SetupWorkflowController(route *gin.RouterGroup) {
 	workflowService := service.NewWorkflowService(db.DB)
-
+	nodeService := service.NewEdgeServiceImpl(db.DB)
 	taskService := service.NewTaskServiceImpl(db.DB)
-	workflowController := workflow_controller_v1.NewWorkflowController(workflowService, taskService)
+	workflowController := workflow_controller_v1.NewWorkflowController(workflowService, taskService, nodeService)
 
 	r := route.Group("v1/workflows")
 	{

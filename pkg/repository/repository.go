@@ -44,11 +44,15 @@ func DbExecAndReturnMany[T any](execer sqlx.ExtContext, query string, args ...in
 	logging.Logger.Debug(query, args)
 	err := sqlx.SelectContext(context.Background(), execer, &dest, query, args...)
 	if err != nil {
-		logging.Logger.Warn(query, args, err)
+		logging.Logger.Error(query, args, err)
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return []T{}, nil
 		}
-		return nil, err
+		return []T{}, err
+	}
+
+	if dest == nil {
+		return []T{}, nil
 	}
 	return dest, nil
 }

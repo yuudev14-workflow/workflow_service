@@ -41,17 +41,18 @@ func (t *TaskServiceImpl) GetTasksByWorkflowId(workflowId string) []models.Tasks
 // else update the content of the task
 func (t *TaskServiceImpl) UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tasks []models.Tasks) ([]models.Tasks, error) {
 
-	statement := sq.Insert("tasks").Columns("workflow_id", "name", "description")
+	statement := sq.Insert("tasks").Columns("workflow_id", "name", "description", "parameters")
 
 	for _, val := range tasks {
-		statement = statement.Values(workflowId, val.Name, val.Description)
+		statement = statement.Values(workflowId, val.Name, val.Description, val.Parameters)
 	}
 
 	sql, args, err := statement.Suffix(`
 		ON CONFLICT (workflow_id, name) DO UPDATE
    	SET description = EXCLUDED.description,
        parameters = EXCLUDED.parameters,
-       updated_at = NOW()`).ToSql()
+       updated_at = NOW()
+		RETURNING *`).ToSql()
 
 	logging.Logger.Debug("UpsertTasks SQL: ", sql)
 	logging.Logger.Debug("UpsertTasks Args: ", args)
