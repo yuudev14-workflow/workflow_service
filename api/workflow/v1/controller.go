@@ -71,19 +71,6 @@ func (w *WorkflowController) UpdateWorkflow(c *gin.Context) {
 		return
 	}
 
-	// node to insert
-	// node to update
-	// node to delete
-
-	// 1. check if node exists in the existing nodes else update
-	// 2. if node not in new nodes to be updated, delete
-
-	// get all edges
-	// 1. check if node exists in the existing nodes else update
-	// 2. if node not in new nodes to be updated, delete
-
-	// save everything
-
 	workflow, err := w.WorkflowService.UpdateWorkflow(workflowId, body)
 
 	logging.Logger.Debug("added workflow...")
@@ -174,7 +161,6 @@ func (w *WorkflowController) DeleteTasks(
 		tasksBodyMap[node.Name] = true
 	}
 	// 2. if node not in new nodes to be updated, delete
-
 	for _, node := range tasks {
 		_, ok := tasksBodyMap[node.Name]
 		if !ok {
@@ -192,6 +178,7 @@ func (w *WorkflowController) DeleteTasks(
 	return nil
 }
 
+// delete edges that doesnt exist in the body payload
 func (w *WorkflowController) DeleteEdges(
 	tx *sqlx.Tx,
 	workflowUUID uuid.UUID,
@@ -201,6 +188,7 @@ func (w *WorkflowController) DeleteEdges(
 	var edgeToDelete []uuid.UUID
 	edgesMap := make(map[[2]string]bool)
 
+	// delete all edges from the workflow if nothing is in the payload
 	if len(edges) == 0 {
 		return w.EdgeService.DeleteAllWorkflowEdges(tx, workflowUUID.String())
 	}
@@ -213,12 +201,14 @@ func (w *WorkflowController) DeleteEdges(
 		return workflowEdgesErr
 	}
 
+	// populate the hashmap
 	for key, values := range edges {
 		for _, val := range values {
 			edgesMap[[2]string{key, val}] = true
 		}
 	}
 
+	// if the edge does not exist in the hashmap, add to the delete lists
 	for _, edge := range workflowEdges {
 		_, ok := edgesMap[[2]string{edge.SourceTaskName, edge.DestinationTaskName}]
 		if !ok {
@@ -261,7 +251,6 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 		response.ResponseError(http.StatusInternalServerError, err)
 		return
 	}
-
 	deleteEdgesErr := w.DeleteEdges(tx, workflowUUID, body.Edges)
 	if deleteEdgesErr != nil {
 		logging.Logger.Error(deleteEdgesErr)
