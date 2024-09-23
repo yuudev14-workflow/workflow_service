@@ -2,7 +2,10 @@ package types
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
+
+	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
 )
 
 type NullableType interface {
@@ -30,4 +33,28 @@ func (i *Nullable[T]) UnmarshalJSON(data []byte) error {
 func (i *Nullable[T]) ToNullableAny() Nullable[any] {
 	value := any(i.Value)
 	return Nullable[any]{Value: &value, Set: i.Set}
+}
+
+type JsonType map[string]interface{}
+
+func (pc *JsonType) Scan(val interface{}) error {
+	if val == nil {
+		*pc = nil // Explicitly set to nil if value is null
+		return nil
+	}
+
+	// Print the raw data type and value
+	logging.Logger.Debug("Raw value from DB:", val, "Type:", fmt.Sprintf("%T", val))
+	var raw []byte
+
+	switch v := val.(type) {
+	case []byte:
+		raw = v
+	case string:
+		raw = []byte(v)
+	default:
+		raw = nil
+	}
+
+	return json.Unmarshal(raw, pc)
 }

@@ -11,9 +11,9 @@ type UpdateWorkflowData struct {
 }
 
 type Task struct {
-	Name        string  `db:"name" json:"name"`
-	Description string  `db:"description" json:"description"`
-	Parameters  *string `db:"parameters" json:"parameters"`
+	Name        string                  `db:"name" json:"name"`
+	Description string                  `db:"description" json:"description"`
+	Parameters  *map[string]interface{} `db:"parameters" json:"parameters"`
 }
 
 type UpdateWorkflowtasks struct {

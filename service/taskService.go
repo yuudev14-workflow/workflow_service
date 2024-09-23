@@ -1,6 +1,8 @@
 package service
 
 import (
+	"encoding/json"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -44,7 +46,8 @@ func (t *TaskServiceImpl) UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tasks [
 	statement := sq.Insert("tasks").Columns("workflow_id", "name", "description", "parameters")
 
 	for _, val := range tasks {
-		statement = statement.Values(workflowId, val.Name, val.Description, val.Parameters)
+		parameters, _ := json.Marshal(val.Parameters)
+		statement = statement.Values(workflowId, val.Name, val.Description, parameters)
 	}
 
 	sql, args, err := statement.Suffix(`

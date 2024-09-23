@@ -1,21 +1,18 @@
 package workflow_controller_v1
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	"github.com/streadway/amqp"
 	"github.com/yuudev14-workflow/workflow-service/db"
 	"github.com/yuudev14-workflow/workflow-service/dto"
 	"github.com/yuudev14-workflow/workflow-service/models"
 	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
-	"github.com/yuudev14-workflow/workflow-service/pkg/mq"
 	rest "github.com/yuudev14-workflow/workflow-service/pkg/rests"
-	"github.com/yuudev14-workflow/workflow-service/pkg/utils"
+	"github.com/yuudev14-workflow/workflow-service/pkg/types"
 	"github.com/yuudev14-workflow/workflow-service/service"
 )
 
@@ -93,8 +90,13 @@ func (w *WorkflowController) UpsertTasks(
 	var nodeToUpsert []models.Tasks
 	for _, node := range nodes {
 		nodeToUpsert = append(nodeToUpsert, models.Tasks{
-			Name:        node.Name,
-			Parameters:  node.Parameters,
+			Name: node.Name,
+			Parameters: func() types.JsonType {
+				if node.Parameters != nil {
+					return types.JsonType(*node.Parameters)
+				}
+				return nil
+			}(),
 			Description: node.Description,
 		})
 	}
@@ -280,52 +282,70 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 
 	newTasks := w.TaskService.GetTasksByWorkflowId(workflowId)
 	newEdges, _ := w.EdgeService.GetEdgesByWorkflowId(workflowId)
+	for _, t := range newTasks {
+		logging.Logger.Debug("parameter: ", t.Parameters)
+	}
 	response.Response(http.StatusAccepted, gin.H{
 		"tasks": newTasks,
 		"edges": newEdges,
 	})
 }
 
-func (w *WorkflowController) Trigger(c *gin.Context) {
+func (w *WorkflowController) GetTasksByWorkflowId(c *gin.Context) {
 	response := rest.Response{C: c}
-	graph := map[string][]string{
-		"A": {"B"},
-		"B": {"C"},
-		"C": {},
-	}
+	workflowId := c.Param("workflow_id")
+	newTasks := w.TaskService.GetTasksByWorkflowId(workflowId)
 
-	currentNode := "A"
-
-	currentQueue := []string{
-		"A",
-	}
-
-	// Publish a message to the queue
-	body := utils.WorkflowData{
-		Graph:        graph,
-		CurrentNode:  currentNode,
-		CurrentQueue: currentQueue,
-		Visited:      currentQueue,
-	}
-
-	jsonData, jsonErr := json.Marshal(body)
-
-	if jsonErr != nil {
-		response.ResponseError(http.StatusBadGateway, jsonErr.Error())
-	}
-	err := mq.MQChannel.Publish(
-		"",                  // exchange
-		mq.SenderQueue.Name, // routing key
-		false,               // mandatory
-		false,               // immediate
-		amqp.Publishing{
-			DeliveryMode: amqp.Persistent,
-			ContentType:  "text/plain",
-			Body:         []byte(jsonData),
-		})
-	if err != nil {
-		response.ResponseError(http.StatusBadGateway, err.Error())
-	}
-
-	response.ResponseSuccess(gin.H{})
+	response.ResponseSuccess(gin.H{
+		"expected": models.Tasks{
+			Name:        "",
+			Parameters:  types.JsonType{"as": "asdas"},
+			Description: "asdas",
+		},
+		"tasks": newTasks,
+	})
 }
+
+// func (w *WorkflowController) Trigger(c *gin.Context) {
+// 	response := rest.Response{C: c}
+// 	graph := map[string][]string{
+// 		"A": {"B"},
+// 		"B": {"C"},
+// 		"C": {},
+// 	}
+
+// 	currentNode := "A"
+
+// 	currentQueue := []string{
+// 		"A",
+// 	}
+
+// 	// Publish a message to the queue
+// 	body := utils.WorkflowData{
+// 		Graph:        graph,
+// 		CurrentNode:  currentNode,
+// 		CurrentQueue: currentQueue,
+// 		Visited:      currentQueue,
+// 	}
+
+// 	jsonData, jsonErr := json.Marshal(body)
+
+// 	if jsonErr != nil {
+// 		response.ResponseError(http.StatusBadGateway, jsonErr.Error())
+// 	}
+// 	err := mq.MQChannel.Publish(
+// 		"",                  // exchange
+// 		mq.SenderQueue.Name, // routing key
+// 		false,               // mandatory
+// 		false,               // immediate
+// 		amqp.Publishing{
+// 			DeliveryMode: amqp.Persistent,
+// 			ContentType:  "text/plain",
+// 			Body:         []byte(jsonData),
+// 		})
+// 	if err != nil {
+// 		response.ResponseError(http.StatusBadGateway, err.Error())
+// 	}
+
+// 	response.ResponseSuccess(gin.H{})
+// }
