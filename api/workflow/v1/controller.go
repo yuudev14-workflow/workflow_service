@@ -282,9 +282,7 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 
 	newTasks := w.TaskService.GetTasksByWorkflowId(workflowId)
 	newEdges, _ := w.EdgeService.GetEdgesByWorkflowId(workflowId)
-	for _, t := range newTasks {
-		logging.Logger.Debug("parameter: ", t.Parameters)
-	}
+
 	response.Response(http.StatusAccepted, gin.H{
 		"tasks": newTasks,
 		"edges": newEdges,
@@ -297,11 +295,6 @@ func (w *WorkflowController) GetTasksByWorkflowId(c *gin.Context) {
 	newTasks := w.TaskService.GetTasksByWorkflowId(workflowId)
 
 	response.ResponseSuccess(gin.H{
-		"expected": models.Tasks{
-			Name:        "",
-			Parameters:  types.JsonType{"as": "asdas"},
-			Description: "asdas",
-		},
 		"tasks": newTasks,
 	})
 }
