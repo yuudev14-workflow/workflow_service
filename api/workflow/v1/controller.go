@@ -37,14 +37,14 @@ func (w *WorkflowController) CreateWorkflow(c *gin.Context) {
 	check, code, validErr := rest.BindFormAndValidate(c, &body)
 
 	if !check {
-		logging.Logger.Errorf(fmt.Sprintf("%v", validErr))
+		logging.Sugar.Errorf(fmt.Sprintf("%v", validErr))
 		response.ResponseError(code, validErr)
 		return
 	}
 
 	workflow, err := w.WorkflowService.CreateWorkflow(body)
 
-	logging.Logger.Debug("added workflow...")
+	logging.Sugar.Debug("added workflow...")
 
 	if err != nil {
 		response.ResponseError(http.StatusBadRequest, err.Error())
@@ -63,14 +63,14 @@ func (w *WorkflowController) UpdateWorkflow(c *gin.Context) {
 	check, code, validErr := rest.BindFormAndValidate(c, &body)
 
 	if !check {
-		logging.Logger.Errorf(fmt.Sprintf("%v", validErr))
+		logging.Sugar.Errorf(fmt.Sprintf("%v", validErr))
 		response.ResponseError(code, validErr)
 		return
 	}
 
 	workflow, err := w.WorkflowService.UpdateWorkflow(workflowId, body)
 
-	logging.Logger.Debug("added workflow...")
+	logging.Sugar.Debug("added workflow...")
 
 	if err != nil {
 		response.ResponseError(http.StatusBadRequest, err.Error())
@@ -101,7 +101,7 @@ func (w *WorkflowController) UpsertTasks(
 		})
 	}
 
-	logging.Logger.Debugf("node to add: %v", nodeToUpsert)
+	logging.Sugar.Debugf("node to add: %v", nodeToUpsert)
 	// save the tasks
 	if len(nodeToUpsert) > 0 {
 		return w.TaskService.UpsertTasks(tx, workflowUUID, nodeToUpsert)
@@ -137,7 +137,7 @@ func (w *WorkflowController) InsertEdges(
 		}
 	}
 
-	logging.Logger.Debugf("edges to add: %v", edgeToInsert)
+	logging.Sugar.Debugf("edges to add: %v", edgeToInsert)
 	// save the edges
 	if len(edgeToInsert) > 0 {
 		_, err := w.EdgeService.InsertEdges(tx, edgeToInsert)
@@ -157,7 +157,7 @@ func (w *WorkflowController) DeleteTasks(
 
 	// verify nodes name should be unique
 	tasks := w.TaskService.GetTasksByWorkflowId(workflowUUID.String())
-	logging.Logger.Debugf("tasks: %v", tasks)
+	logging.Sugar.Debugf("tasks: %v", tasks)
 
 	for _, node := range nodes {
 		tasksBodyMap[node.Name] = true
@@ -170,9 +170,9 @@ func (w *WorkflowController) DeleteTasks(
 		}
 	}
 
-	logging.Logger.Debugf("node to delete: %v", nodeToDelete)
+	logging.Sugar.Debugf("node to delete: %v", nodeToDelete)
 	if len(nodeToDelete) > 0 {
-		logging.Logger.Debugf("node to delete: %v", nodeToDelete)
+		logging.Sugar.Debugf("node to delete: %v", nodeToDelete)
 		err := w.TaskService.DeleteTasks(tx, nodeToDelete)
 		return err
 
@@ -196,10 +196,10 @@ func (w *WorkflowController) DeleteEdges(
 	}
 
 	workflowEdges, workflowEdgesErr := w.EdgeService.GetEdgesByWorkflowId(workflowUUID.String())
-	logging.Logger.Debug("workflow edges", workflowEdges)
+	logging.Sugar.Debug("workflow edges", workflowEdges)
 
 	if workflowEdgesErr != nil {
-		logging.Logger.Error(workflowEdgesErr)
+		logging.Sugar.Error(workflowEdgesErr)
 		return workflowEdgesErr
 	}
 
@@ -218,7 +218,7 @@ func (w *WorkflowController) DeleteEdges(
 		}
 	}
 
-	logging.Logger.Debugf("edge to delete: %v", edgeToDelete)
+	logging.Sugar.Debugf("edge to delete: %v", edgeToDelete)
 	if len(edgeToDelete) > 0 {
 		deleteEdgesError := w.EdgeService.DeleteEdges(tx, edgeToDelete)
 		return deleteEdgesError
@@ -242,7 +242,7 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 	check, code, validErr := rest.BindFormAndValidate(c, &body)
 
 	if !check {
-		logging.Logger.Errorf(fmt.Sprintf("%v", validErr))
+		logging.Sugar.Errorf(fmt.Sprintf("%v", validErr))
 		response.ResponseError(code, validErr)
 		return
 	}
@@ -255,14 +255,14 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 	}
 	deleteEdgesErr := w.DeleteEdges(tx, workflowUUID, body.Edges)
 	if deleteEdgesErr != nil {
-		logging.Logger.Error(deleteEdgesErr)
+		logging.Sugar.Error(deleteEdgesErr)
 		tx.Rollback()
 		response.ResponseError(http.StatusBadRequest, deleteEdgesErr)
 		return
 	}
 	insertedTasks, upsertTasksErr := w.UpsertTasks(tx, workflowUUID, body.Nodes)
 	if upsertTasksErr != nil {
-		logging.Logger.Error(upsertTasksErr)
+		logging.Sugar.Error(upsertTasksErr)
 		tx.Rollback()
 		response.ResponseError(http.StatusBadRequest, upsertTasksErr)
 		return
@@ -270,11 +270,11 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 	w.DeleteTasks(tx, workflowUUID, body.Nodes)
 	w.InsertEdges(tx, workflowUUID, body.Edges, insertedTasks)
 
-	logging.Logger.Debug("added workflow...")
+	logging.Sugar.Debug("added workflow...")
 	commitErr := tx.Commit()
 
 	if commitErr != nil {
-		logging.Logger.Error(commitErr)
+		logging.Sugar.Error(commitErr)
 		tx.Rollback()
 		response.ResponseError(http.StatusInternalServerError, commitErr)
 		return

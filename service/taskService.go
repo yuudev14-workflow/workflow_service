@@ -57,11 +57,11 @@ func (t *TaskServiceImpl) UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tasks [
        updated_at = NOW()
 		RETURNING *`).ToSql()
 
-	logging.Logger.Debug("UpsertTasks SQL: ", sql)
-	logging.Logger.Debug("UpsertTasks Args: ", args)
+	logging.Sugar.Debug("UpsertTasks SQL: ", sql)
+	logging.Sugar.Debug("UpsertTasks Args: ", args)
 
 	if err != nil {
-		logging.Logger.Error("Failed to build SQL query", err)
+		logging.Sugar.Error("Failed to build SQL query", err)
 		return nil, err
 	}
 
@@ -75,15 +75,15 @@ func (t *TaskServiceImpl) UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tasks [
 // Delete multiple tasks based on the taskIds
 func (t *TaskServiceImpl) DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error {
 	sql, args, err := sq.Delete("tasks").Where(sq.Eq{"id": taskIds}).ToSql()
-	logging.Logger.Debug("DeleteTasks SQL: ", sql)
-	logging.Logger.Debug("DeleteTasks Args: ", args)
+	logging.Sugar.Debug("DeleteTasks SQL: ", sql)
+	logging.Sugar.Debug("DeleteTasks Args: ", args)
 	if err != nil {
-		logging.Logger.Error("Failed to build SQL query", err)
+		logging.Sugar.Error("Failed to build SQL query", err)
 		return err
 	}
 	sql = tx.Rebind(sql)
 	_, err = tx.Query(sql, args...)
-	logging.Logger.Warn(err)
+	logging.Sugar.Warn(err)
 
 	return err
 }

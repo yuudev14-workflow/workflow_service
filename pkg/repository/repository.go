@@ -13,10 +13,10 @@ import (
 func DbExecAndReturnOne[T any](DB *sqlx.DB, query string, args ...interface{}) (*T, error) {
 	var dest T
 	query = DB.Rebind(query)
-	logging.Logger.Debug(query, args)
+	logging.Sugar.Debug(query, args)
 	err := DB.Get(&dest, query, args...)
 	if err != nil {
-		logging.Logger.Warn(err)
+		logging.Sugar.Warn(err)
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
@@ -27,7 +27,7 @@ func DbExecAndReturnOne[T any](DB *sqlx.DB, query string, args ...interface{}) (
 
 // func DbExecAndReturnMany[T any](DB *sqlx.DB, query string, args ...interface{}) ([]T, error) {
 // 	var dest []T
-// 	logging.Logger.Debug(query, args)
+// 	logging.Sugar.Debug(query, args)
 // 	err := DB.Select(&dest, query, args...)
 // 	if err != nil {
 // 		if err == sql.ErrNoRows {
@@ -41,10 +41,10 @@ func DbExecAndReturnOne[T any](DB *sqlx.DB, query string, args ...interface{}) (
 func DbExecAndReturnMany[T any](execer sqlx.ExtContext, query string, args ...interface{}) ([]T, error) {
 	var dest []T
 	query = execer.Rebind(query)
-	logging.Logger.Debug(query, args)
+	logging.Sugar.Debug(query, args)
 	err := sqlx.SelectContext(context.Background(), execer, &dest, query, args...)
 	if err != nil {
-		logging.Logger.Error(query, args, err)
+		logging.Sugar.Error(query, args, err)
 		if err == sql.ErrNoRows {
 			return []T{}, nil
 		}
@@ -59,7 +59,7 @@ func DbExecAndReturnMany[T any](execer sqlx.ExtContext, query string, args ...in
 
 func DbSelectOne[T any](DB *sqlx.DB, query string, args ...interface{}) (*T, error) {
 	var dest T
-	logging.Logger.Debug(query, args)
+	logging.Sugar.Debug(query, args)
 	err := DB.Get(&dest, query, args...)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -93,17 +93,17 @@ func Transact[T any](DB *sqlx.DB, fn func(*sqlx.Tx) (*T, error)) (*T, error) {
 
 func GenerateKeyValueQuery(payload map[string]types.Nullable[any]) map[string]interface{} {
 	objects := make(map[string]interface{})
-	logging.Logger.Debugf("payload: %v", payload)
+	logging.Sugar.Debugf("payload: %v", payload)
 
 	for key, val := range payload {
-		logging.Logger.Debugf("key: %v", key)
-		logging.Logger.Debugf("set: %v", val.Set)
+		logging.Sugar.Debugf("key: %v", key)
+		logging.Sugar.Debugf("set: %v", val.Set)
 		if val.Set {
 			objects[key] = val.Value
 		}
 	}
 
-	logging.Logger.Debugf("objects: %v", objects)
+	logging.Sugar.Debugf("objects: %v", objects)
 
 	return objects
 }

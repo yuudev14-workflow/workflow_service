@@ -44,7 +44,7 @@ func (pc *JsonType) Scan(val interface{}) error {
 	}
 
 	// Print the raw data type and value
-	logging.Logger.Debug("Raw value from DB:", val, "Type:", fmt.Sprintf("%T", val))
+	logging.Sugar.Debug("Raw value from DB:", val, "Type:", fmt.Sprintf("%T", val))
 	var raw []byte
 
 	switch v := val.(type) {

@@ -17,6 +17,7 @@ type AuthService interface {
 	CheckUserByUsername(username string) error
 	CheckUserByEmail(email string) error
 	CreateUser(form dto.SignupForm) (*models.User, error)
+	GetUserByUsername(username string) (*models.User, error)
 }
 
 type AuthServiceImpl struct {

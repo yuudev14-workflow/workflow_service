@@ -14,20 +14,20 @@ var (
 )
 
 func ConnectToMQ() {
-	logging.Logger.Infof("connecting to message queue %v...", environment.Settings.MQ_URL)
+	logging.Sugar.Infof("connecting to message queue %v...", environment.Settings.MQ_URL)
 	conn, err := amqp.Dial(environment.Settings.MQ_URL)
 	if err != nil {
-		logging.Logger.Panicf("%v", err)
+		logging.Sugar.Panicf("%v", err)
 	}
-	logging.Logger.Info("connected to message queue...")
+	logging.Sugar.Info("connected to message queue...")
 
 	MQConn = conn
 
 	ch, chErr := MQConn.Channel()
-	logging.Logger.Info("open channel in message queue...")
+	logging.Sugar.Info("open channel in message queue...")
 
 	if chErr != nil {
-		logging.Logger.Panicf("%v", chErr)
+		logging.Sugar.Panicf("%v", chErr)
 	}
 
 	MQChannel = ch
@@ -36,13 +36,13 @@ func ConnectToMQ() {
 }
 
 func declareQueues(ch *amqp.Channel) {
-	logging.Logger.Info("Declaring queues")
+	logging.Sugar.Info("Declaring queues")
 	declareSenderQueue(ch)
 	declareReceiverQueue(ch)
 }
 
 func declareSenderQueue(ch *amqp.Channel) {
-	logging.Logger.Info("Declaring sender queue")
+	logging.Sugar.Info("Declaring sender queue")
 	// Declare a queue
 	q, err := ch.QueueDeclare(
 		environment.Settings.SenderQueueName, // name
@@ -53,13 +53,13 @@ func declareSenderQueue(ch *amqp.Channel) {
 		nil,                                  // arguments
 	)
 	if err != nil {
-		logging.Logger.Panicf("%v", err)
+		logging.Sugar.Panicf("%v", err)
 	}
 	SenderQueue = q
 }
 
 func declareReceiverQueue(ch *amqp.Channel) {
-	logging.Logger.Info("Declaring receiver queue")
+	logging.Sugar.Info("Declaring receiver queue")
 	// Declare a queue
 	q, err := ch.QueueDeclare(
 		environment.Settings.ReceiverQueueName, // name
@@ -70,7 +70,7 @@ func declareReceiverQueue(ch *amqp.Channel) {
 		nil,                                    // arguments
 	)
 	if err != nil {
-		logging.Logger.Panicf("%v", err)
+		logging.Sugar.Panicf("%v", err)
 	}
 	ReceiverQueue = q
 }

@@ -12,7 +12,7 @@ func PrepareMessage(message utils.WorkflowData) {
 	for _, node := range message.Graph[message.CurrentNode] {
 		// check if nodes with node destinatin in the database is already finished with success
 		// if all is finish, publish the message
-		logging.Logger.Infof("Node: %s", node)
+		logging.Sugar.Infof("Node: %s", node)
 		body := utils.WorkflowData{
 			Graph:        message.Graph,
 			CurrentNode:  node,
@@ -23,7 +23,7 @@ func PrepareMessage(message utils.WorkflowData) {
 		jsonData, jsonErr := json.Marshal(body)
 
 		if jsonErr != nil {
-			logging.Logger.Warnf("Error decoding JSON: %v", jsonErr)
+			logging.Sugar.Warnf("Error decoding JSON: %v", jsonErr)
 		}
 		err := MQChannel.Publish(
 			"",               // exchange
@@ -36,7 +36,7 @@ func PrepareMessage(message utils.WorkflowData) {
 				Body:         []byte(jsonData),
 			})
 		if err != nil {
-			logging.Logger.Errorf("MQ publish error: %v", jsonErr)
+			logging.Sugar.Errorf("MQ publish error: %v", jsonErr)
 		}
 	}
 
@@ -64,15 +64,15 @@ func Listen() {
 
 			err := json.Unmarshal(d.Body, &data)
 			if err != nil {
-				logging.Logger.Warnf("Error decoding JSON: %v", err)
+				logging.Sugar.Warnf("Error decoding JSON: %v", err)
 			}
-			logging.Logger.Infof("Received a message: %s", data)
+			logging.Sugar.Infof("Received a message: %s", data)
 			// if all nodes in graph is finish with success dont prepare message
 			// if status is failed, dont prepare message, remove all the message
 			PrepareMessage(data)
 		}
 	}()
 
-	logging.Logger.Info("Listening to message queue")
+	logging.Sugar.Info("Listening to message queue")
 	<-forever
 }

@@ -4,10 +4,13 @@ import (
 	"runtime"
 
 	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var (
 	Logger *logrus.Logger
+	Sugar  *zap.SugaredLogger
 )
 
 type LineHook struct{}
@@ -27,30 +30,30 @@ func (hook *LineHook) Fire(entry *logrus.Entry) error {
 
 // setup logger
 func Setup(level string) {
-	data := map[string]logrus.Level{
-		"DEBUG":   logrus.DebugLevel,
-		"INFO":    logrus.InfoLevel,
-		"WARNING": logrus.WarnLevel,
-		"ERROR":   logrus.ErrorLevel,
-		"FATAL":   logrus.FatalLevel,
+	data := map[string]zapcore.Level{
+		"DEBUG":   zap.DebugLevel,
+		"INFO":    zap.InfoLevel,
+		"WARNING": zap.WarnLevel,
+		"ERROR":   zap.ErrorLevel,
+		"FATAL":   zap.FatalLevel,
 	}
 
-	Logger = logrus.New()
-	Logger.SetReportCaller(true) // this is set to true so that it show correctly where the actual file is
-
-	// set logger level
-	var loggerLevel logrus.Level
+	config := zap.NewDevelopmentConfig()
+	var loggerLevel zapcore.Level
 	if value, ok := data[level]; ok {
 		loggerLevel = value
 	} else {
-		loggerLevel = logrus.DebugLevel
+		loggerLevel = zap.DebugLevel
 	}
-	Logger.SetLevel(loggerLevel)
+	config.Level = zap.NewAtomicLevelAt(loggerLevel)
 
-	Logger.Formatter = &logrus.TextFormatter{
-		ForceColors:     true,
-		FullTimestamp:   true,
-		TimestampFormat: "2006-01-02 15:04:05",
+	logger, err := config.Build()
+	if err != nil {
+		panic(err)
 	}
-	Logger.AddHook(&LineHook{})
+
+	defer logger.Sync() // flushes buffer, if any
+
+	Sugar = logger.Sugar()
+
 }

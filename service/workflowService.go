@@ -46,10 +46,10 @@ func (w *WorkflowServiceImpl) UpdateWorkflow(id string, workflow dto.UpdateWorkf
 
 	sql, args, err := sq.Update("workflows").SetMap(data).Where(sq.Eq{"id": id}).Suffix("RETURNING *").ToSql()
 
-	logging.Logger.Debug("UpdateWorkflow SQL: ", sql)
-	logging.Logger.Debug("UpdateWorkflow Args: ", args)
+	logging.Sugar.Debug("UpdateWorkflow SQL: ", sql)
+	logging.Sugar.Debug("UpdateWorkflow Args: ", args)
 	if err != nil {
-		logging.Logger.Error("Failed to build SQL query", err)
+		logging.Sugar.Error("Failed to build SQL query", err)
 		return nil, err
 	}
 	return repository.DbExecAndReturnOne[models.Workflows](

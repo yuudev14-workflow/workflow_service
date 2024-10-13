@@ -43,10 +43,10 @@ func (e *EdgeServiceImpl) GetEdgesByWorkflowId(workflowId string) ([]Edges, erro
 		Join("tasks t2 ON e.destination_id = t2.id").
 		Where(sq.Eq{"t1.workflow_id": workflowId}).
 		ToSql()
-	logging.Logger.Debug("GetNodesByWorkflowId SQL: ", sql)
-	logging.Logger.Debug("GetNodesByWorkflowId Args: ", args)
+	logging.Sugar.Debug("GetNodesByWorkflowId SQL: ", sql)
+	logging.Sugar.Debug("GetNodesByWorkflowId Args: ", args)
 	if err != nil {
-		logging.Logger.Error("Failed to build SQL query", err)
+		logging.Sugar.Error("Failed to build SQL query", err)
 		return nil, err
 	}
 	return repository.DbExecAndReturnMany[Edges](
@@ -67,11 +67,11 @@ func (e *EdgeServiceImpl) InsertEdges(tx *sqlx.Tx, edges []models.Edges) ([]mode
 
 	sql, args, err := statement.Suffix(`ON CONFLICT (destination_id, source_id) DO NOTHING`).ToSql()
 
-	logging.Logger.Debug("InsertEdges SQL: ", sql)
-	logging.Logger.Debug("InsertEdges Args: ", args)
+	logging.Sugar.Debug("InsertEdges SQL: ", sql)
+	logging.Sugar.Debug("InsertEdges Args: ", args)
 
 	if err != nil {
-		logging.Logger.Error("Failed to build SQL query", err)
+		logging.Sugar.Error("Failed to build SQL query", err)
 		return nil, err
 	}
 
@@ -85,16 +85,16 @@ func (e *EdgeServiceImpl) InsertEdges(tx *sqlx.Tx, edges []models.Edges) ([]mode
 // accepts multiple edge ids to be deleted
 func (e *EdgeServiceImpl) DeleteEdges(tx *sqlx.Tx, edgeIds []uuid.UUID) error {
 	sql, args, err := sq.Delete("edges").Where(sq.Eq{"id": edgeIds}).ToSql()
-	logging.Logger.Debug("DeleteEdges SQL: ", sql)
-	logging.Logger.Debug("DeleteEdges Args: ", args)
+	logging.Sugar.Debug("DeleteEdges SQL: ", sql)
+	logging.Sugar.Debug("DeleteEdges Args: ", args)
 	if err != nil {
-		logging.Logger.Error("Failed to build SQL query", err)
+		logging.Sugar.Error("Failed to build SQL query", err)
 		return err
 	}
 	sql = tx.Rebind(sql)
 	_, err = tx.Exec(sql, args...)
 	if err != nil {
-		logging.Logger.Warn(err)
+		logging.Sugar.Warn(err)
 	}
 
 	return err
@@ -116,16 +116,16 @@ func (e *EdgeServiceImpl) DeleteAllWorkflowEdges(tx *sqlx.Tx, workflowId string)
 		source_id IN (SELECT id FROM tasks WHERE workflow_id = ?)`, workflowId, workflowId)
 	// Convert the query to SQL
 	sql, args, err := deleteQuery.ToSql()
-	logging.Logger.Debug("DeleteAllWorkflowEdges SQL: ", sql)
-	logging.Logger.Debug("DeleteAllWorkflowEdges Args: ", args)
+	logging.Sugar.Debug("DeleteAllWorkflowEdges SQL: ", sql)
+	logging.Sugar.Debug("DeleteAllWorkflowEdges Args: ", args)
 	if err != nil {
-		logging.Logger.Error("Failed to build SQL query", err)
+		logging.Sugar.Error("Failed to build SQL query", err)
 		return err
 	}
 	sql = tx.Rebind(sql)
 	_, err = tx.Exec(sql, args...)
 	if err != nil {
-		logging.Logger.Warn(err)
+		logging.Sugar.Warn(err)
 	}
 
 	return err
