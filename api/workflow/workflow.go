@@ -4,13 +4,17 @@ import (
 	"github.com/gin-gonic/gin"
 	workflow_controller_v1 "github.com/yuudev14-workflow/workflow-service/api/workflow/v1"
 	"github.com/yuudev14-workflow/workflow-service/db"
+	"github.com/yuudev14-workflow/workflow-service/pkg/repository"
 	"github.com/yuudev14-workflow/workflow-service/service"
 )
 
 func SetupWorkflowController(route *gin.RouterGroup) {
-	workflowService := service.NewWorkflowService(db.DB)
-	nodeService := service.NewEdgeServiceImpl(db.DB)
-	taskService := service.NewTaskServiceImpl(db.DB)
+	workflowRepository := repository.NewWorkflowRepository(db.DB)
+	edgeRepository := repository.NewEdgeRepositoryImpl(db.DB)
+	taskRepository := repository.NewTaskRepositoryImpl(db.DB)
+	workflowService := service.NewWorkflowService(workflowRepository)
+	nodeService := service.NewEdgeServiceImpl(edgeRepository)
+	taskService := service.NewTaskServiceImpl(taskRepository)
 	workflowController := workflow_controller_v1.NewWorkflowController(workflowService, taskService, nodeService)
 
 	r := route.Group("v1/workflows")

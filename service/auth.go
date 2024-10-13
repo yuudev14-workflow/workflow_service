@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/yuudev14-workflow/workflow-service/dto"
 	"github.com/yuudev14-workflow/workflow-service/models"
 	"github.com/yuudev14-workflow/workflow-service/pkg/repository"
@@ -17,36 +16,22 @@ type AuthService interface {
 	CheckUserByUsername(username string) error
 	CheckUserByEmail(email string) error
 	CreateUser(form dto.SignupForm) (*models.User, error)
-	GetUserByUsername(username string) (*models.User, error)
 }
 
 type AuthServiceImpl struct {
-	*sqlx.DB
+	UserRepository repository.UserRepository
 }
 
 // Auth Service Constructor
-func NewUserService(db *sqlx.DB) AuthService {
+func NewUserService(UserRepository repository.UserRepository) AuthService {
 	return &AuthServiceImpl{
-		DB: db,
+		UserRepository: UserRepository,
 	}
-}
-
-// Get User by providing username
-func (a *AuthServiceImpl) GetUserByUsername(username string) (*models.User, error) {
-	return repository.DbSelectOne[models.User](
-		a.DB,
-		"SELECT id, username, email, first_name, last_name from users WHERE username=$1",
-		username,
-	)
 }
 
 // VerifyUser implements UserService.
 func (a *AuthServiceImpl) VerifyUser(form dto.LoginForm) (*models.User, error) {
-	user, usernameError := repository.DbSelectOne[models.User](
-		a.DB,
-		"SELECT * from users WHERE email=$1 OR username=$1",
-		form.Username,
-	)
+	user, usernameError := a.UserRepository.GetUserByEmailOrUsername(form.Username)
 
 	if usernameError != nil {
 		return nil, usernameError
@@ -85,11 +70,7 @@ func (a *AuthServiceImpl) ValidateUserSignUp(username string, email string) erro
 // CheckUserByEmail implements UserService.
 func (a *AuthServiceImpl) CheckUserByEmail(email string) error {
 	// check if email already exist
-	user, emailError := repository.DbSelectOne[models.User](
-		a.DB,
-		"SELECT * from users WHERE email=$1",
-		email,
-	)
+	user, emailError := a.UserRepository.GetUserByEmail(email)
 
 	if emailError != nil {
 		return emailError
@@ -103,11 +84,7 @@ func (a *AuthServiceImpl) CheckUserByEmail(email string) error {
 
 // CheckUserByUsername implements UserService.
 func (a *AuthServiceImpl) CheckUserByUsername(username string) error {
-	user, usernameError := repository.DbSelectOne[models.User](
-		a.DB,
-		"SELECT id, username, email, first_name, last_name from users WHERE username=$1",
-		username,
-	)
+	user, usernameError := a.UserRepository.GetUserByUsername(username)
 
 	if usernameError != nil {
 		return usernameError
@@ -121,11 +98,7 @@ func (a *AuthServiceImpl) CheckUserByUsername(username string) error {
 
 // Get User by providing username or email
 func (a *AuthServiceImpl) GetUserByEmailOrUsername(usernameOrEmail string) (*models.User, error) {
-	return repository.DbSelectOne[models.User](
-		a.DB,
-		"SELECT * from users WHERE email=$1 OR username=$1",
-		usernameOrEmail,
-	)
+	return a.UserRepository.GetUserByEmailOrUsername(usernameOrEmail)
 }
 
 // create user
@@ -138,14 +111,11 @@ func (a *AuthServiceImpl) CreateUser(form dto.SignupForm) (*models.User, error) 
 	}
 	// save user
 	excryptedPassword := string(newPassword)
+	newUser := models.User{
+		Username: form.Username,
+		Password: excryptedPassword,
+		Email:    form.Email,
+	}
 
-	_, err := a.DB.Exec(`INSERT INTO users (email, username, password) VALUES ($1, $2, $3)`, form.Email, form.Username, excryptedPassword)
-	if err != nil {
-		return nil, err
-	}
-	user, err := a.GetUserByUsername(form.Username)
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
+	return a.UserRepository.CreateUser(&newUser)
 }

@@ -17,10 +17,3 @@ type User struct {
 }
 
 // user persistence methods to be implemeted
-type UserRepository interface {
-	GetUserByID(id uuid.UUID) (*User, error)
-	GetUserByUsername(username string) (*User, error)
-	GetUserByEmail(email string) (*User, error)
-	CreateUser(user *User) (*User, error)
-	GetUserByEmailOrUsername(usernameOrEmail string) (*User, error)
-}
