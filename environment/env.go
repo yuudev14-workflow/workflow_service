@@ -20,6 +20,7 @@ type SettingsData struct {
 	MQ_URL            string
 	ReceiverQueueName string
 	SenderQueueName   string
+	JWT_SECRET        string
 }
 
 // load env based
@@ -74,6 +75,16 @@ func GetLoggerLevel() string {
 	val := os.Getenv("LOGGER_MODE")
 	if val == "" {
 		return loggerMode
+	}
+	return val
+
+}
+
+// get logger level
+func GetJwtSecret() string {
+	val := os.Getenv("JWT_SECRET")
+	if val == "" {
+		return "secret"
 	}
 	return val
 
