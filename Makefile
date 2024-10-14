@@ -21,5 +21,8 @@ migrate-down:
 test:
 	go test -coverprofile=coverage.out -v ./... 
 
+view-coverage:
+	go tool cover -html=coverage.out
+
 swag:
 	swag init
