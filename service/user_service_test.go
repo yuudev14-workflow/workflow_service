@@ -1,7 +1,6 @@
-package repository_test
+package service_test
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -9,15 +8,20 @@ import (
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
+	"github.com/yuudev14-workflow/workflow-service/dto"
 	"github.com/yuudev14-workflow/workflow-service/environment"
 	"github.com/yuudev14-workflow/workflow-service/models"
 	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
 	"github.com/yuudev14-workflow/workflow-service/pkg/repository"
+	"github.com/yuudev14-workflow/workflow-service/service"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
+	password     = "password"
 	sqlxDB       *sqlx.DB
 	mock         sqlmock.Sqlmock
+	userService  service.UserService
 	repo         repository.UserRepository
 	expectedUser *models.User
 )
@@ -39,14 +43,10 @@ func TestMain(m *testing.M) {
 
 	// Create an instance of UserRepositoryImpl with the mock database
 	repo = repository.NewUserRepository(sqlxDB)
-	// Set up the expectation
-	id, _ := uuid.NewUUID()
-	expectedUser = &models.User{
-		ID:       id,
-		Username: "testuser",
-		Email:    "test@example.com",
-	}
+	userService = service.NewUserService(repo)
 
+	// Set up the expectation
+	generateExpectedUser()
 	// Run tests
 	code := m.Run()
 
@@ -54,15 +54,29 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func generateExpectedUser() {
+
+	id, _ := uuid.NewUUID()
+	encryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	expectedUser = &models.User{
+		ID:       id,
+		Username: "testuser",
+		Email:    "test@example.com",
+		Password: string(encryptedPassword),
+	}
+
+}
+
 func setMockRows() *sqlmock.Rows {
-	return sqlmock.NewRows([]string{"id", "username", "email"}).
-		AddRow(expectedUser.ID, expectedUser.Username, expectedUser.Email)
+	return sqlmock.NewRows([]string{"id", "username", "email", "password"}).
+		AddRow(expectedUser.ID, expectedUser.Username, expectedUser.Email, expectedUser.Password)
 }
 
 func checkExpectedOutput(t *testing.T, err error, expected interface{}, output interface{}) {
 	assert.NoError(t, err)
 	assert.Equal(t, expected, output)
 }
+
 func TestGetUserByEmailOrUsername(t *testing.T) {
 
 	tests := []struct {
@@ -93,7 +107,7 @@ func TestGetUserByEmailOrUsername(t *testing.T) {
 				WithArgs(test.username).
 				WillReturnRows(rows)
 			// Call the method being tested
-			user, err := repo.GetUserByEmailOrUsername(test.username)
+			user, err := userService.GetUserByEmailOrUsername(test.username)
 			// Assert the results
 			checkExpectedOutput(t, err, test.expected, user)
 		})
@@ -101,42 +115,6 @@ func TestGetUserByEmailOrUsername(t *testing.T) {
 	}
 
 	// Ensure all expectations were met
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestGetUserByID(t *testing.T) {
-
-	id2, _ := uuid.NewUUID()
-	tests := []struct {
-		name     string
-		id       uuid.UUID
-		expected *models.User
-	}{
-		{
-			name:     "user exist",
-			id:       expectedUser.ID,
-			expected: expectedUser,
-		},
-		{
-			name:     "user doenst exist",
-			id:       id2,
-			expected: nil,
-		},
-	}
-
-	expectedQuery := "SELECT id, username, email, first_name, last_name from users WHERE id=\\$1"
-	rows := setMockRows()
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			mock.ExpectQuery(expectedQuery).
-				WithArgs(test.id).
-				WillReturnRows(rows)
-			user, err := repo.GetUserByID(test.id)
-			checkExpectedOutput(t, err, test.expected, user)
-
-		})
-	}
-
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -210,58 +188,86 @@ func TestGetUserByEmail(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestCreateUserWhereUserIsNotAvaliable(t *testing.T) {
-	test := struct {
-		user     models.User
-		expected *models.User
+func TestVerifyUser(t *testing.T) {
+	expectedQuery := "SELECT \\* from users WHERE email=\\$1 OR username=\\$1"
+
+	tests := []struct {
+		name         string
+		input        dto.LoginForm
+		expected     *models.User
+		errorMessage string
+		setupMock    func(mock sqlmock.Sqlmock)
 	}{
-		user: models.User{
-			Email:    "test111@gmail.com",
-			Username: "test111",
-			Password: "password",
+		{
+			name: "user exist",
+			input: dto.LoginForm{
+				Username: expectedUser.Username,
+				Password: password,
+			},
+			expected:     expectedUser,
+			errorMessage: "",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				rows := setMockRows()
+
+				mock.ExpectQuery(expectedQuery).
+					WithArgs(expectedUser.Username).
+					WillReturnRows(rows)
+			},
 		},
-		expected: &models.User{
-			Email:    "test111@gmail.com",
-			Username: "test111",
-			Password: "password",
+		{
+			name: "user does not exist",
+			input: dto.LoginForm{
+				Username: "testuser1",
+				Password: "password",
+			},
+			expected:     nil,
+			errorMessage: "user is not found",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{"id", "username", "email", "password"})
+
+				mock.ExpectQuery(expectedQuery).
+					WithArgs("testuser1").
+					WillReturnRows(rows)
+			},
+		},
+		{
+			name: "user exist 2",
+			input: dto.LoginForm{
+				Username: expectedUser.Username,
+				Password: "password1",
+			},
+			expected:     nil,
+			errorMessage: "password is not correct",
+			setupMock: func(mock sqlmock.Sqlmock) {
+				rows := setMockRows()
+
+				mock.ExpectQuery(expectedQuery).
+					WithArgs(expectedUser.Username).
+					WillReturnRows(rows)
+			},
 		},
 	}
 
-	expectedQuery := "INSERT INTO users \\(email, username, password\\) VALUES \\(\\$1, \\$2, \\$3\\)"
+	// Define the expected query and result
 
-	rows := sqlmock.NewRows([]string{"username", "email"}).AddRow(test.user.Username, test.user.Email)
+	for _, test := range tests {
 
-	mock.ExpectExec(expectedQuery).
-		WithArgs(test.user.Email, test.user.Username, test.user.Password).WillReturnResult(sqlmock.NewResult(1, 1))
+		t.Run(test.name, func(t *testing.T) {
+			test.setupMock(mock)
+			// Call the method being tested
+			user, err := userService.VerifyUser(test.input)
+			t.Logf("usersss: %v", user)
+			// Assert the results
+			if test.expected != nil {
+				checkExpectedOutput(t, err, test.expected, user)
+			} else {
+				assert.Error(t, err)
+				assert.Equal(t, err.Error(), test.errorMessage)
+			}
+			// Ensure all expectations were met
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
 
-	mock.ExpectQuery("SELECT id, username, email, first_name, last_name from users WHERE username=\\$1").
-		WithArgs(test.user.Username).
-		WillReturnRows(rows)
-	user, err := repo.CreateUser(&test.user)
-	t.Logf("error: %v, user, %v", err, user)
-
-	assert.Equal(t, test.expected.Email, user.Email)
-	assert.Equal(t, test.expected.Username, user.Username)
-
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestCreateUserWhereUserIsAvaliable(t *testing.T) {
-	user := &models.User{
-		Email:    "test111@gmail.com",
-		Username: "test111",
-		Password: "password",
 	}
 
-	expectedQuery := "INSERT INTO users \\(email, username, password\\) VALUES \\(\\$1, \\$2, \\$3\\)"
-
-	mock.ExpectExec(expectedQuery).
-		WithArgs(user.Email, user.Username, user.Password).WillReturnResult(sqlmock.NewResult(1, 1)).WillReturnError(fmt.Errorf("some error"))
-
-	user, err := repo.CreateUser(user)
-	t.Logf("error: %v, user, %v", err, user)
-
-	assert.Error(t, err)
-
-	assert.NoError(t, mock.ExpectationsWereMet())
 }

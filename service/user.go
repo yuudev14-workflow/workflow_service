@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type AuthService interface {
+type UserService interface {
 	GetUserByEmailOrUsername(usernameOrEmail string) (*models.User, error)
 	ValidateUserSignUp(username string, email string) error
 	VerifyUser(form dto.LoginForm) (*models.User, error)
@@ -18,19 +18,19 @@ type AuthService interface {
 	CreateUser(form dto.SignupForm) (*models.User, error)
 }
 
-type AuthServiceImpl struct {
+type UserServiceImpl struct {
 	UserRepository repository.UserRepository
 }
 
 // Auth Service Constructor
-func NewUserService(UserRepository repository.UserRepository) AuthService {
-	return &AuthServiceImpl{
+func NewUserService(UserRepository repository.UserRepository) UserService {
+	return &UserServiceImpl{
 		UserRepository: UserRepository,
 	}
 }
 
 // VerifyUser implements UserService.
-func (a *AuthServiceImpl) VerifyUser(form dto.LoginForm) (*models.User, error) {
+func (a *UserServiceImpl) VerifyUser(form dto.LoginForm) (*models.User, error) {
 	user, usernameError := a.UserRepository.GetUserByEmailOrUsername(form.Username)
 
 	if usernameError != nil {
@@ -50,7 +50,7 @@ func (a *AuthServiceImpl) VerifyUser(form dto.LoginForm) (*models.User, error) {
 }
 
 // ValidateUserSignUp implements UserService.
-func (a *AuthServiceImpl) ValidateUserSignUp(username string, email string) error {
+func (a *UserServiceImpl) ValidateUserSignUp(username string, email string) error {
 	// check if username already exist
 	usernameError := a.CheckUserByUsername(username)
 
@@ -68,7 +68,7 @@ func (a *AuthServiceImpl) ValidateUserSignUp(username string, email string) erro
 }
 
 // CheckUserByEmail implements UserService.
-func (a *AuthServiceImpl) CheckUserByEmail(email string) error {
+func (a *UserServiceImpl) CheckUserByEmail(email string) error {
 	// check if email already exist
 	user, emailError := a.UserRepository.GetUserByEmail(email)
 
@@ -83,7 +83,7 @@ func (a *AuthServiceImpl) CheckUserByEmail(email string) error {
 }
 
 // CheckUserByUsername implements UserService.
-func (a *AuthServiceImpl) CheckUserByUsername(username string) error {
+func (a *UserServiceImpl) CheckUserByUsername(username string) error {
 	user, usernameError := a.UserRepository.GetUserByUsername(username)
 
 	if usernameError != nil {
@@ -97,12 +97,12 @@ func (a *AuthServiceImpl) CheckUserByUsername(username string) error {
 }
 
 // Get User by providing username or email
-func (a *AuthServiceImpl) GetUserByEmailOrUsername(usernameOrEmail string) (*models.User, error) {
+func (a *UserServiceImpl) GetUserByEmailOrUsername(usernameOrEmail string) (*models.User, error) {
 	return a.UserRepository.GetUserByEmailOrUsername(usernameOrEmail)
 }
 
 // create user
-func (a *AuthServiceImpl) CreateUser(form dto.SignupForm) (*models.User, error) {
+func (a *UserServiceImpl) CreateUser(form dto.SignupForm) (*models.User, error) {
 	// encode password
 	newPassword, passwordErr := bcrypt.GenerateFromPassword([]byte(form.Password), bcrypt.DefaultCost)
 

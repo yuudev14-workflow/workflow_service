@@ -21,6 +21,7 @@ func initApp() {
 	db.SetupDB(environment.Settings.DB_URL)
 }
 func main() {
+	db.SetupDB(environment.Settings.DB_URL)
 	initApp()
 	mq.ConnectToMQ()
 	go mq.Listen()

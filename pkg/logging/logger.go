@@ -1,32 +1,13 @@
 package logging
 
 import (
-	"runtime"
-
-	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 var (
-	Logger *logrus.Logger
-	Sugar  *zap.SugaredLogger
+	Sugar *zap.SugaredLogger
 )
-
-type LineHook struct{}
-
-// all logger levels can execute this hook
-func (hook *LineHook) Levels() []logrus.Level {
-	return logrus.AllLevels
-}
-
-// add file and line when logger in fired
-func (hook *LineHook) Fire(entry *logrus.Entry) error {
-	_, file, line, _ := runtime.Caller(0)
-	entry.Data["file"] = file
-	entry.Data["line"] = line
-	return nil
-}
 
 // setup logger
 func Setup(level string) {

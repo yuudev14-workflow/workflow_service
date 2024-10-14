@@ -19,7 +19,6 @@ migrate-down:
 		migrate -source $(MIGRATIONS_PATH) -database $(DATABASE_URL) down
 
 test:
-	migrate -source $(MIGRATIONS_PATH) -database $(DATABASE_URL) up 
 	go test -coverprofile=coverage.out -v ./... 
 
 swag:

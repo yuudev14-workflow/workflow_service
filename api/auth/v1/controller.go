@@ -17,12 +17,12 @@ import (
 )
 
 type AuthController struct {
-	AuthService service.AuthService
+	UserService service.UserService
 }
 
-func NewAuthController(AuthService service.AuthService) *AuthController {
+func NewAuthController(UserService service.UserService) *AuthController {
 	return &AuthController{
-		AuthService: AuthService,
+		UserService: UserService,
 	}
 }
 
@@ -58,7 +58,7 @@ func (a *AuthController) SignUp(c *gin.Context) {
 		return
 	}
 
-	validateErr := a.AuthService.ValidateUserSignUp(form.Username, form.Email)
+	validateErr := a.UserService.ValidateUserSignUp(form.Username, form.Email)
 
 	if validateErr != nil {
 		logging.Sugar.Errorf(validateErr.Error())
@@ -66,7 +66,7 @@ func (a *AuthController) SignUp(c *gin.Context) {
 		return
 	}
 
-	addedUser, addUserErr := a.AuthService.CreateUser(form)
+	addedUser, addUserErr := a.UserService.CreateUser(form)
 	logging.Sugar.Debug("added user...")
 
 	if addUserErr != nil {
@@ -124,7 +124,7 @@ func (a *AuthController) Login(c *gin.Context) {
 	logging.Sugar.Debugf("form validated... %v", form)
 
 	// check if username already exist
-	user, usernameError := a.AuthService.VerifyUser(form)
+	user, usernameError := a.UserService.VerifyUser(form)
 	if usernameError != nil {
 		logging.Sugar.Errorf(usernameError.Error())
 		response.ResponseError(http.StatusBadRequest, usernameError.Error())
