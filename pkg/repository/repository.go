@@ -41,10 +41,10 @@ func DbExecAndReturnOne[T any](DB *sqlx.DB, query string, args ...interface{}) (
 func DbExecAndReturnMany[T any](execer sqlx.ExtContext, query string, args ...interface{}) ([]T, error) {
 	var dest []T
 	query = execer.Rebind(query)
-	logging.Sugar.Debug(query, args)
+	logging.Sugar.Debugw("Executing query", "query", query, "args", args)
 	err := sqlx.SelectContext(context.Background(), execer, &dest, query, args...)
 	if err != nil {
-		logging.Sugar.Error(query, args, err)
+		logging.Sugar.Errorw("Error in query", "query", query, "args", args, "err", err)
 		if err == sql.ErrNoRows {
 			return []T{}, nil
 		}

@@ -81,8 +81,10 @@ func (t *TaskRepositoryImpl) DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error
 		return err
 	}
 	sql = tx.Rebind(sql)
-	_, err = tx.Query(sql, args...)
-	logging.Sugar.Warn(err)
+	_, err = tx.Exec(sql, args...)
+	if err != nil {
+		logging.Sugar.Warn(err)
+	}
 
 	return err
 }

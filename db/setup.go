@@ -30,7 +30,7 @@ func SetupDB(dataSourceName string) error {
 	}
 	logging.Sugar.Infof("Connecting to DB... %v", dataSourceName)
 	var err error
-	DB, err := sqlx.Open("postgres", dataSourceName)
+	DB, err = sqlx.Open("postgres", dataSourceName)
 
 	if err != nil {
 		logging.Sugar.Errorf("error opening database: %v", err.Error())

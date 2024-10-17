@@ -267,8 +267,20 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 		response.ResponseError(http.StatusBadRequest, upsertTasksErr)
 		return
 	}
-	w.DeleteTasks(tx, workflowUUID, body.Nodes)
-	w.InsertEdges(tx, workflowUUID, body.Edges, insertedTasks)
+	deleteTaskError := w.DeleteTasks(tx, workflowUUID, body.Nodes)
+	if deleteTaskError != nil {
+		logging.Sugar.Error(deleteTaskError)
+		tx.Rollback()
+		response.ResponseError(http.StatusInternalServerError, deleteTaskError.Error())
+		return
+	}
+	insertEdgeError := w.InsertEdges(tx, workflowUUID, body.Edges, insertedTasks)
+	if insertEdgeError != nil {
+		logging.Sugar.Error(insertEdgeError)
+		tx.Rollback()
+		response.ResponseError(http.StatusInternalServerError, insertEdgeError.Error())
+		return
+	}
 
 	logging.Sugar.Debug("added workflow...")
 	commitErr := tx.Commit()
@@ -276,7 +288,7 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 	if commitErr != nil {
 		logging.Sugar.Error(commitErr)
 		tx.Rollback()
-		response.ResponseError(http.StatusInternalServerError, commitErr)
+		response.ResponseError(http.StatusInternalServerError, commitErr.Error())
 		return
 	}
 
@@ -299,46 +311,66 @@ func (w *WorkflowController) GetTasksByWorkflowId(c *gin.Context) {
 	})
 }
 
-// func (w *WorkflowController) Trigger(c *gin.Context) {
-// 	response := rest.Response{C: c}
-// 	graph := map[string][]string{
-// 		"A": {"B"},
-// 		"B": {"C"},
-// 		"C": {},
-// 	}
+func (w *WorkflowController) Trigger(c *gin.Context) {
+	response := rest.Response{C: c}
+	workflowId := c.Param("workflow_id")
+	tasks := w.TaskService.GetTasksByWorkflowId(workflowId)
+	edges, _ := w.EdgeService.GetEdgesByWorkflowId(workflowId)
 
-// 	currentNode := "A"
+	graph := map[string][]string{}
 
-// 	currentQueue := []string{
-// 		"A",
-// 	}
+	for _, edge := range edges {
+		children, ok := graph[edge.SourceTaskName]
+		if ok {
+			graph[edge.SourceTaskName] = append(children, edge.DestinationTaskName)
+		} else {
+			graph[edge.SourceTaskName] = []string{edge.DestinationTaskName}
+		}
+	}
 
-// 	// Publish a message to the queue
-// 	body := utils.WorkflowData{
-// 		Graph:        graph,
-// 		CurrentNode:  currentNode,
-// 		CurrentQueue: currentQueue,
-// 		Visited:      currentQueue,
-// 	}
+	response.Response(http.StatusAccepted, gin.H{
+		"tasks": tasks,
+		"edges": graph,
+	})
+	// response := rest.Response{C: c}
+	// graph := map[string][]string{
+	// 	"A": {"B"},
+	// 	"B": {"C"},
+	// 	"C": {},
+	// }
 
-// 	jsonData, jsonErr := json.Marshal(body)
+	// currentNode := "A"
 
-// 	if jsonErr != nil {
-// 		response.ResponseError(http.StatusBadGateway, jsonErr.Error())
-// 	}
-// 	err := mq.MQChannel.Publish(
-// 		"",                  // exchange
-// 		mq.SenderQueue.Name, // routing key
-// 		false,               // mandatory
-// 		false,               // immediate
-// 		amqp.Publishing{
-// 			DeliveryMode: amqp.Persistent,
-// 			ContentType:  "text/plain",
-// 			Body:         []byte(jsonData),
-// 		})
-// 	if err != nil {
-// 		response.ResponseError(http.StatusBadGateway, err.Error())
-// 	}
+	// currentQueue := []string{
+	// 	"A",
+	// }
 
-// 	response.ResponseSuccess(gin.H{})
-// }
+	// // Publish a message to the queue
+	// body := utils.WorkflowData{
+	// 	Graph:        graph,
+	// 	CurrentNode:  currentNode,
+	// 	CurrentQueue: currentQueue,
+	// 	Visited:      currentQueue,
+	// }
+
+	// jsonData, jsonErr := json.Marshal(body)
+
+	// if jsonErr != nil {
+	// 	response.ResponseError(http.StatusBadGateway, jsonErr.Error())
+	// }
+	// err := mq.MQChannel.Publish(
+	// 	"",                  // exchange
+	// 	mq.SenderQueue.Name, // routing key
+	// 	false,               // mandatory
+	// 	false,               // immediate
+	// 	amqp.Publishing{
+	// 		DeliveryMode: amqp.Persistent,
+	// 		ContentType:  "text/plain",
+	// 		Body:         []byte(jsonData),
+	// 	})
+	// if err != nil {
+	// 	response.ResponseError(http.StatusBadGateway, err.Error())
+	// }
+
+	// response.ResponseSuccess(gin.H{})
+}

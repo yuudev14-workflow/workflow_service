@@ -19,7 +19,7 @@ func SetupWorkflowController(route *gin.RouterGroup) {
 
 	r := route.Group("v1/workflows")
 	{
-		// r.POST("/trigger", workflowController.Trigger)
+		r.POST("/trigger/:workflow_id", workflowController.Trigger)
 		r.POST("/", workflowController.CreateWorkflow)
 		r.GET("/:workflow_id/tasks", workflowController.GetTasksByWorkflowId)
 		r.PUT("/:workflow_id", workflowController.UpdateWorkflow)

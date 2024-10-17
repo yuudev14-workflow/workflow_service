@@ -18,8 +18,8 @@ type EdgeRepository interface {
 
 type Edges struct {
 	ID                  uuid.UUID `db:"id" json:"id"`
-	DestinationID       string    `db:"destination_id" json:"destination_id"`
-	SourceID            string    `db:"source_id" json:"source_id"`
+	DestinationID       uuid.UUID `db:"destination_id" json:"destination_id"`
+	SourceID            uuid.UUID `db:"source_id" json:"source_id"`
 	DestinationTaskName string    `db:"destination_task_name" json:"destination_task_name"`
 	SourceTaskName      string    `db:"source_task_name" json:"source_task_name"`
 }
@@ -64,7 +64,7 @@ func (e *EdgeRepositoryImpl) InsertEdges(tx *sqlx.Tx, edges []models.Edges) ([]m
 		statement = statement.Values(val.DestinationID, val.SourceID)
 	}
 
-	sql, args, err := statement.Suffix(`ON CONFLICT (destination_id, source_id) DO NOTHING`).ToSql()
+	sql, args, err := statement.Suffix(`ON CONFLICT (destination_id, source_id) DO NOTHING RETURNING *`).ToSql()
 
 	logging.Sugar.Debug("InsertEdges SQL: ", sql)
 	logging.Sugar.Debug("InsertEdges Args: ", args)

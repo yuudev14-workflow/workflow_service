@@ -19,21 +19,41 @@ func Setup(level string) {
 		"FATAL":   zap.FatalLevel,
 	}
 
-	config := zap.NewDevelopmentConfig()
 	var loggerLevel zapcore.Level
 	if value, ok := data[level]; ok {
 		loggerLevel = value
 	} else {
 		loggerLevel = zap.DebugLevel
 	}
-	config.Level = zap.NewAtomicLevelAt(loggerLevel)
 
-	logger, err := config.Build()
+	encoderConfig := zapcore.EncoderConfig{
+		TimeKey:        "ts",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		FunctionKey:    zapcore.OmitKey,
+		MessageKey:     "msg",
+		StacktraceKey:  "stacktrace",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.CapitalLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.SecondsDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
+	}
+
+	config := zap.Config{
+		Level:            zap.NewAtomicLevelAt(loggerLevel),
+		Development:      true,
+		Encoding:         "console",
+		EncoderConfig:    encoderConfig,
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stderr"},
+	}
+
+	logger, err := config.Build(zap.AddCaller())
 	if err != nil {
 		panic(err)
 	}
-
-	defer logger.Sync() // flushes buffer, if any
 
 	Sugar = logger.Sugar()
 
