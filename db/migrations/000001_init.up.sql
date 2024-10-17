@@ -50,7 +50,7 @@ CREATE TABLE
     description TEXT,
     parameters JSON,
     config VARCHAR(50),
-    connector_name VARCHAR(100),
+    connector_name VARCHAR(100) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
 
