@@ -97,7 +97,9 @@ func (w *WorkflowController) UpsertTasks(
 				}
 				return nil
 			}(),
-			Description: node.Description,
+			Description:   node.Description,
+			Config:        node.Config.Value,
+			ConnectorName: node.ConnectorName,
 		})
 	}
 

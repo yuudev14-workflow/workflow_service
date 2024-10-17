@@ -49,6 +49,8 @@ CREATE TABLE
     name VARCHAR(50),
     description TEXT,
     parameters JSON,
+    config VARCHAR(50),
+    connector_name VARCHAR(100),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
 

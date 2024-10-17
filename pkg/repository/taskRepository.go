@@ -42,11 +42,11 @@ func (t *TaskRepositoryImpl) GetTasksByWorkflowId(workflowId string) []models.Ta
 // else update the content of the task
 func (t *TaskRepositoryImpl) UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tasks []models.Tasks) ([]models.Tasks, error) {
 
-	statement := sq.Insert("tasks").Columns("workflow_id", "name", "description", "parameters")
+	statement := sq.Insert("tasks").Columns("workflow_id", "name", "description", "parameters", "config", "connector_name")
 
 	for _, val := range tasks {
 		parameters, _ := json.Marshal(val.Parameters)
-		statement = statement.Values(workflowId, val.Name, val.Description, parameters)
+		statement = statement.Values(workflowId, val.Name, val.Description, parameters, val.Config, val.ConnectorName)
 	}
 
 	sql, args, err := statement.Suffix(`

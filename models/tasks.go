@@ -8,12 +8,14 @@ import (
 )
 
 type Tasks struct {
-	ID          uuid.UUID      `db:"id" json:"id"`
-	WorkflowID  string         `db:"workflow_id" json:"workflow_id"`
-	Status      string         `db:"status" json:"status"`
-	Name        string         `db:"name" json:"name"`
-	Description string         `db:"description" json:"description"`
-	Parameters  types.JsonType `db:"parameters" json:"parameters"`
-	CreatedAt   time.Time      `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time      `db:"updated_at" json:"updated_at"`
+	ID            uuid.UUID      `db:"id" json:"id"`
+	WorkflowID    string         `db:"workflow_id" json:"workflow_id"`
+	Status        string         `db:"status" json:"status"`
+	Name          string         `db:"name" json:"name"`
+	Config        *string        `db:"config" json:"config"`
+	ConnectorName string         `db:"connector_name" json:"connector_name"`
+	Description   string         `db:"description" json:"description"`
+	Parameters    types.JsonType `db:"parameters" json:"parameters"`
+	CreatedAt     time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt     time.Time      `db:"updated_at" json:"updated_at"`
 }

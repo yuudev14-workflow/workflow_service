@@ -1,6 +1,6 @@
 #  make test ENV=".env.test"
 
-include $(ENV)
+include .env
 export
 
 .PHONY: migrate
