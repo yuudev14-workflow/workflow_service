@@ -237,13 +237,13 @@ func (w *WorkflowController) DeleteEdges(
 }
 
 func validateWorkflowTaskPayload(body dto.UpdateWorkflowtasks) error {
-	_, ok := body.Edges["Start"]
+	_, ok := body.Edges["start"]
 	if !ok {
 		return fmt.Errorf("'Start' doesnt exist in edges")
 	}
 
 	for _, node := range body.Nodes {
-		if node.Name == "Start" {
+		if node.Name == "start" {
 			return nil
 		}
 	}
@@ -415,6 +415,8 @@ func (w *WorkflowController) Trigger(c *gin.Context) {
 	if err != nil {
 		response.ResponseError(http.StatusBadGateway, err.Error())
 	}
+
+	logging.Sugar.Infow("successfully pushed the message", "jsonData", string(jsonData))
 
 	response.ResponseSuccess(gin.H{})
 }
