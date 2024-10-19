@@ -8,24 +8,30 @@ import (
 )
 
 type TaskService interface {
-	GetTasksByWorkflowId(workflowId string) []models.Tasks
+	GetTasksByWorkflowId(workflowId string) ([]models.Tasks, error)
 	UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tasks []models.Tasks) ([]models.Tasks, error)
 	DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error
 }
 
 type TaskServiceImpl struct {
-	TaskRepository repository.TaskRepository
+	TaskRepository  repository.TaskRepository
+	WorkflowService WorkflowService
 }
 
-func NewTaskServiceImpl(TaskService repository.TaskRepository) TaskService {
+func NewTaskServiceImpl(TaskService repository.TaskRepository, WorkflowService WorkflowService) TaskService {
 	return &TaskServiceImpl{
-		TaskRepository: TaskService,
+		TaskRepository:  TaskService,
+		WorkflowService: WorkflowService,
 	}
 }
 
 // get tasks by workflow id
-func (t *TaskServiceImpl) GetTasksByWorkflowId(workflowId string) []models.Tasks {
-	return t.TaskRepository.GetTasksByWorkflowId(workflowId)
+func (t *TaskServiceImpl) GetTasksByWorkflowId(workflowId string) ([]models.Tasks, error) {
+	_, err := t.WorkflowService.GetWorkflowById(workflowId)
+	if err != nil {
+		return nil, err
+	}
+	return t.TaskRepository.GetTasksByWorkflowId(workflowId), nil
 }
 
 // upsert tasks. insert multiple tasks.

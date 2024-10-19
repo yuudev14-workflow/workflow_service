@@ -1,12 +1,15 @@
 package service
 
 import (
+	"fmt"
+
 	"github.com/yuudev14-workflow/workflow-service/dto"
 	"github.com/yuudev14-workflow/workflow-service/models"
 	"github.com/yuudev14-workflow/workflow-service/pkg/repository"
 )
 
 type WorkflowService interface {
+	GetWorkflowById(id string) (*models.Workflows, error)
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
 	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
 }
@@ -19,6 +22,19 @@ func NewWorkflowService(WorkflowRepository repository.WorkflowRepository) Workfl
 	return &WorkflowServiceImpl{
 		WorkflowRepository: WorkflowRepository,
 	}
+}
+
+// GetWorkflowById implements WorkflowService.
+func (w *WorkflowServiceImpl) GetWorkflowById(id string) (*models.Workflows, error) {
+	workflow, workflowErr := w.WorkflowRepository.GetWorkflowById(id)
+	if workflowErr != nil {
+		return nil, workflowErr
+	}
+
+	if workflow == nil {
+		return nil, fmt.Errorf("user is not found")
+	}
+	return workflow, nil
 }
 
 // function for creating a workflow:

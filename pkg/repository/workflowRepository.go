@@ -12,6 +12,7 @@ import (
 )
 
 type WorkflowRepository interface {
+	GetWorkflowById(id string) (*models.Workflows, error)
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
 	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
 }
@@ -24,6 +25,21 @@ func NewWorkflowRepository(db *sqlx.DB) WorkflowRepository {
 	return &WorkflowRepositoryImpl{
 		DB: db,
 	}
+}
+
+// GetWorkflowById implements WorkflowRepository.
+func (w *WorkflowRepositoryImpl) GetWorkflowById(id string) (*models.Workflows, error) {
+	sql, args, err := sq.Select("*").From("workflows").Where("id = ?", id).ToSql()
+	logging.Sugar.Debugw("GetWorkflowById statement", "sql", sql, "args", args)
+	if err != nil {
+		logging.Sugar.Error("Error in GetWorkflowById", err)
+		return nil, err
+	}
+	return DbExecAndReturnOne[models.Workflows](
+		w.DB,
+		sql,
+		args...,
+	)
 }
 
 // function for creating a workflow:

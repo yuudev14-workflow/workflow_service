@@ -161,7 +161,10 @@ func (w *WorkflowController) DeleteTasks(
 	tasksBodyMap := make(map[string]bool)
 
 	// verify nodes name should be unique
-	tasks := w.TaskService.GetTasksByWorkflowId(workflowUUID.String())
+	tasks, tasksErr := w.TaskService.GetTasksByWorkflowId(workflowUUID.String())
+	if tasksErr != nil {
+		return tasksErr
+	}
 	logging.Sugar.Debugf("tasks: %v", tasks)
 
 	for _, node := range nodes {
@@ -297,7 +300,12 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 		return
 	}
 
-	newTasks := w.TaskService.GetTasksByWorkflowId(workflowId)
+	newTasks, newTaskErr := w.TaskService.GetTasksByWorkflowId(workflowId)
+	if newTaskErr != nil {
+		logging.Sugar.Errorf("error: ", newTaskErr)
+		response.ResponseError(http.StatusBadRequest, newTaskErr.Error())
+		return
+	}
 	newEdges, _ := w.EdgeService.GetEdgesByWorkflowId(workflowId)
 
 	response.Response(http.StatusAccepted, gin.H{
@@ -309,7 +317,21 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 func (w *WorkflowController) GetTasksByWorkflowId(c *gin.Context) {
 	response := rest.Response{C: c}
 	workflowId := c.Param("workflow_id")
-	newTasks := w.TaskService.GetTasksByWorkflowId(workflowId)
+
+	_, workflowErr := w.WorkflowService.GetWorkflowById(workflowId)
+
+	if workflowErr != nil {
+		logging.Sugar.Error(workflowErr)
+		response.ResponseError(http.StatusInternalServerError, workflowErr.Error())
+		return
+	}
+
+	newTasks, newTaskErr := w.TaskService.GetTasksByWorkflowId(workflowId)
+	if newTaskErr != nil {
+		logging.Sugar.Errorf("error: ", newTaskErr)
+		response.ResponseError(http.StatusBadRequest, newTaskErr.Error())
+		return
+	}
 
 	response.ResponseSuccess(gin.H{
 		"tasks": newTasks,
@@ -319,7 +341,19 @@ func (w *WorkflowController) GetTasksByWorkflowId(c *gin.Context) {
 func (w *WorkflowController) Trigger(c *gin.Context) {
 	response := rest.Response{C: c}
 	workflowId := c.Param("workflow_id")
-	tasks := w.TaskService.GetTasksByWorkflowId(workflowId)
+	_, workflowErr := w.WorkflowService.GetWorkflowById(workflowId)
+
+	if workflowErr != nil {
+		logging.Sugar.Error(workflowErr)
+		response.ResponseError(http.StatusInternalServerError, workflowErr.Error())
+		return
+	}
+	tasks, tasksErr := w.TaskService.GetTasksByWorkflowId(workflowId)
+	if tasksErr != nil {
+		logging.Sugar.Errorf("error: ", tasksErr)
+		response.ResponseError(http.StatusBadRequest, tasksErr.Error())
+		return
+	}
 	edges, _ := w.EdgeService.GetEdgesByWorkflowId(workflowId)
 
 	graph := map[string][]string{}
