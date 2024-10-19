@@ -4,6 +4,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/yuudev14-workflow/workflow-service/models"
+	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
 	"github.com/yuudev14-workflow/workflow-service/pkg/repository"
 )
 
@@ -48,5 +49,10 @@ func (e *EdgeServiceImpl) DeleteEdges(tx *sqlx.Tx, edgeIds []uuid.UUID) error {
 
 // accepts multiple edge ids to be deleted
 func (e *EdgeServiceImpl) DeleteAllWorkflowEdges(tx *sqlx.Tx, workflowId string) error {
+	_, err := e.WorkflowService.GetWorkflowById(workflowId)
+	if err != nil {
+		logging.Sugar.Errorf("error when deleting workflow edges", err)
+		return err
+	}
 	return e.EdgeRepository.DeleteAllWorkflowEdges(tx, workflowId)
 }
