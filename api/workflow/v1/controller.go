@@ -236,6 +236,21 @@ func (w *WorkflowController) DeleteEdges(
 
 }
 
+func validateWorkflowTaskPayload(body dto.UpdateWorkflowtasks) error {
+	_, ok := body.Edges["Start"]
+	if !ok {
+		return fmt.Errorf("'Start' doesnt exist in edges")
+	}
+
+	for _, node := range body.Nodes {
+		if node.Name == "Start" {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("'Start' doesnt exist in nodes")
+}
+
 func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 	var body dto.UpdateWorkflowtasks
 	response := rest.Response{C: c}
@@ -252,6 +267,14 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 	if !check {
 		logging.Sugar.Errorf(fmt.Sprintf("%v", validErr))
 		response.ResponseError(code, validErr)
+		return
+	}
+
+	// validate if start node in body payload
+	payloadErr := validateWorkflowTaskPayload(body)
+
+	if payloadErr != nil {
+		response.ResponseError(code, payloadErr.Error())
 		return
 	}
 
