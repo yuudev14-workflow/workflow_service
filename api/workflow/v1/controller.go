@@ -1,14 +1,12 @@
 package workflow_controller_v1
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	"github.com/streadway/amqp"
 	"github.com/yuudev14-workflow/workflow-service/db"
 	"github.com/yuudev14-workflow/workflow-service/dto"
 	"github.com/yuudev14-workflow/workflow-service/models"
@@ -390,33 +388,16 @@ func (w *WorkflowController) Trigger(c *gin.Context) {
 		}
 	}
 
+	// Publish a message to the queue
+
+	mqErr := mq.SendMessage(graph)
+	if mqErr != nil {
+		logging.Sugar.Errorf("error when sending the message to queue", mqErr)
+		response.ResponseError(http.StatusBadGateway, mqErr.Error())
+	}
+
 	response.Response(http.StatusAccepted, gin.H{
 		"tasks": tasks,
 		"edges": graph,
 	})
-
-	// Publish a message to the queue
-
-	jsonData, jsonErr := json.Marshal(graph)
-
-	if jsonErr != nil {
-		response.ResponseError(http.StatusBadGateway, jsonErr.Error())
-	}
-	err := mq.MQChannel.Publish(
-		"",                  // exchange
-		mq.SenderQueue.Name, // routing key
-		false,               // mandatory
-		false,               // immediate
-		amqp.Publishing{
-			DeliveryMode: amqp.Persistent,
-			ContentType:  "text/plain",
-			Body:         []byte(jsonData),
-		})
-	if err != nil {
-		response.ResponseError(http.StatusBadGateway, err.Error())
-	}
-
-	logging.Sugar.Infow("successfully pushed the message", "jsonData", string(jsonData))
-
-	response.ResponseSuccess(gin.H{})
 }

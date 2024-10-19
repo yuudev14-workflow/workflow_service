@@ -8,39 +8,31 @@ import (
 	"github.com/yuudev14-workflow/workflow-service/pkg/utils"
 )
 
-func PrepareMessage(message utils.WorkflowData) {
-	for _, node := range message.Graph[message.CurrentNode] {
-		// check if nodes with node destinatin in the database is already finished with success
-		// if all is finish, publish the message
-		logging.Sugar.Infof("Node: %s", node)
-		body := utils.WorkflowData{
-			Graph:        message.Graph,
-			CurrentNode:  node,
-			CurrentQueue: message.CurrentQueue,
-			Visited:      message.Visited,
-		}
+func SendMessage(graph map[string][]string) error {
+	jsonData, jsonErr := json.Marshal(graph)
 
-		jsonData, jsonErr := json.Marshal(body)
-
-		if jsonErr != nil {
-			logging.Sugar.Warnf("Error decoding JSON: %v", jsonErr)
-		}
-		err := MQChannel.Publish(
-			"",               // exchange
-			SenderQueue.Name, // routing key
-			false,            // mandatory
-			false,            // immediate
-			amqp.Publishing{
-				DeliveryMode: amqp.Persistent,
-				ContentType:  "text/plain",
-				Body:         []byte(jsonData),
-			})
-		if err != nil {
-			logging.Sugar.Errorf("MQ publish error: %v", jsonErr)
-		}
+	if jsonErr != nil {
+		return jsonErr
+	}
+	err := MQChannel.Publish(
+		"",               // exchange
+		SenderQueue.Name, // routing key
+		false,            // mandatory
+		false,            // immediate
+		amqp.Publishing{
+			DeliveryMode: amqp.Persistent,
+			ContentType:  "text/plain",
+			Body:         []byte(jsonData),
+		})
+	if err != nil {
+		return err
 	}
 
+	logging.Sugar.Infow("successfully pushed the message", "jsonData", string(jsonData))
+	return nil
+
 }
+
 func Listen() {
 	msgs, err := MQChannel.Consume(
 		ReceiverQueue.Name, // queue
@@ -69,7 +61,7 @@ func Listen() {
 			logging.Sugar.Infof("Received a message: %s", data)
 			// if all nodes in graph is finish with success dont prepare message
 			// if status is failed, dont prepare message, remove all the message
-			PrepareMessage(data)
+			// PrepareMessage(data)
 		}
 	}()
 
