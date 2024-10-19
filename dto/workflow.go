@@ -15,6 +15,7 @@ type Task struct {
 	Description   string                  `db:"description" json:"description"`
 	Parameters    *map[string]interface{} `db:"parameters" json:"parameters,omitempty"`
 	ConnectorName string                  `db:"connector_name" json:"connector_name"`
+	Operation     string                  `db:"operation" json:"operation"`
 	Config        types.Nullable[string]  `json:"config,omitempty"`
 }
 

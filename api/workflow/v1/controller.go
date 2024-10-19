@@ -101,6 +101,7 @@ func (w *WorkflowController) UpsertTasks(
 			Description:   node.Description,
 			Config:        node.Config.Value,
 			ConnectorName: node.ConnectorName,
+			Operation:     node.Operation,
 		})
 	}
 
@@ -375,9 +376,15 @@ func (w *WorkflowController) Trigger(c *gin.Context) {
 		response.ResponseError(http.StatusBadRequest, tasksErr.Error())
 		return
 	}
+
 	edges, _ := w.EdgeService.GetEdgesByWorkflowId(workflowId)
 
+	tasksMap := make(map[string]models.Tasks)
 	graph := map[string][]string{}
+
+	for _, task := range tasks {
+		tasksMap[task.Name] = task
+	}
 
 	for _, edge := range edges {
 		children, ok := graph[edge.SourceTaskName]
@@ -397,8 +404,8 @@ func (w *WorkflowController) Trigger(c *gin.Context) {
 	// Publish a message to the queue
 
 	mqErr := mq.SendTaskMessage(mq.TaskMessage{
-		Nodes: graph,
-		Edges: edges,
+		Graph: graph,
+		Tasks: tasksMap,
 	})
 	if mqErr != nil {
 		logging.Sugar.Errorf("error when sending the message to queue", mqErr)

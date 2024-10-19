@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 
 	"github.com/streadway/amqp"
+	"github.com/yuudev14-workflow/workflow-service/models"
 	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
-	"github.com/yuudev14-workflow/workflow-service/pkg/repository"
 	"github.com/yuudev14-workflow/workflow-service/pkg/utils"
 )
 
 type TaskMessage struct {
-	Nodes map[string][]string `json:"nodes"`
-	Edges []repository.Edges  `json:"edges"`
+	Graph map[string][]string     `json:"graph"`
+	Tasks map[string]models.Tasks `json:"tasks"`
 }
 
 func SendTaskMessage(graph TaskMessage) error {
