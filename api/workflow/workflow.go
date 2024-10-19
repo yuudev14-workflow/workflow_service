@@ -13,7 +13,7 @@ func SetupWorkflowController(route *gin.RouterGroup) {
 	edgeRepository := repository.NewEdgeRepositoryImpl(db.DB)
 	taskRepository := repository.NewTaskRepositoryImpl(db.DB)
 	workflowService := service.NewWorkflowService(workflowRepository)
-	nodeService := service.NewEdgeServiceImpl(edgeRepository)
+	nodeService := service.NewEdgeServiceImpl(edgeRepository, workflowService)
 	taskService := service.NewTaskServiceImpl(taskRepository, workflowService)
 	workflowController := workflow_controller_v1.NewWorkflowController(workflowService, taskService, nodeService)
 

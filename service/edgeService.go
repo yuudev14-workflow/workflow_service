@@ -15,17 +15,23 @@ type EdgeService interface {
 }
 
 type EdgeServiceImpl struct {
-	EdgeRepository repository.EdgeRepository
+	EdgeRepository  repository.EdgeRepository
+	WorkflowService WorkflowService
 }
 
-func NewEdgeServiceImpl(EdgeRepository repository.EdgeRepository) EdgeService {
+func NewEdgeServiceImpl(EdgeRepository repository.EdgeRepository, WorkflowService WorkflowService) EdgeService {
 	return &EdgeServiceImpl{
-		EdgeRepository: EdgeRepository,
+		EdgeRepository:  EdgeRepository,
+		WorkflowService: WorkflowService,
 	}
 }
 
 // GetNodesByWorkflowId implements EdgeService.
 func (e *EdgeServiceImpl) GetEdgesByWorkflowId(workflowId string) ([]repository.Edges, error) {
+	_, err := e.WorkflowService.GetWorkflowById(workflowId)
+	if err != nil {
+		return nil, err
+	}
 	return e.EdgeRepository.GetEdgesByWorkflowId(workflowId)
 }
 
