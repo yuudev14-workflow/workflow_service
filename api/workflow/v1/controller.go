@@ -386,11 +386,20 @@ func (w *WorkflowController) Trigger(c *gin.Context) {
 		} else {
 			graph[edge.SourceTaskName] = []string{edge.DestinationTaskName}
 		}
+
+		_, taskNameOk := graph[edge.DestinationTaskName]
+
+		if !taskNameOk {
+			graph[edge.DestinationTaskName] = []string{}
+		}
 	}
 
 	// Publish a message to the queue
 
-	mqErr := mq.SendMessage(graph)
+	mqErr := mq.SendTaskMessage(mq.TaskMessage{
+		Nodes: graph,
+		Edges: edges,
+	})
 	if mqErr != nil {
 		logging.Sugar.Errorf("error when sending the message to queue", mqErr)
 		response.ResponseError(http.StatusBadGateway, mqErr.Error())

@@ -5,10 +5,16 @@ import (
 
 	"github.com/streadway/amqp"
 	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
+	"github.com/yuudev14-workflow/workflow-service/pkg/repository"
 	"github.com/yuudev14-workflow/workflow-service/pkg/utils"
 )
 
-func SendMessage(graph map[string][]string) error {
+type TaskMessage struct {
+	Nodes map[string][]string `json:"nodes"`
+	Edges []repository.Edges  `json:"edges"`
+}
+
+func SendTaskMessage(graph TaskMessage) error {
 	jsonData, jsonErr := json.Marshal(graph)
 
 	if jsonErr != nil {
