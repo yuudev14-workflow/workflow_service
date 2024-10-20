@@ -16,7 +16,7 @@ type WorkflowRepository interface {
 	GetWorkflowById(id string) (*models.Workflows, error)
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
 	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
-	CreateWorkflowHistory(id string) (*models.WorkflowHistory, error)
+	CreateWorkflowHistory(tx *sqlx.Tx, id string) (*models.WorkflowHistory, error)
 }
 
 type WorkflowRepositoryImpl struct {
@@ -30,10 +30,10 @@ func NewWorkflowRepository(db *sqlx.DB) WorkflowRepository {
 }
 
 // CreateWorkflowHistory implements WorkflowRepository.
-func (w *WorkflowRepositoryImpl) CreateWorkflowHistory(id string) (*models.WorkflowHistory, error) {
+func (w *WorkflowRepositoryImpl) CreateWorkflowHistory(tx *sqlx.Tx, id string) (*models.WorkflowHistory, error) {
 	statement := sq.Insert("workflow_history").Columns("workflow_id", "triggered_at").Values(id, time.Now()).Suffix("RETURNING *")
 	return DbExecAndReturnOne[models.WorkflowHistory](
-		w.DB,
+		tx,
 		statement,
 	)
 }
