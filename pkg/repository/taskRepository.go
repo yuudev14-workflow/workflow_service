@@ -15,6 +15,7 @@ type TaskRepository interface {
 	GetTasksByWorkflowId(workflowId string) []models.Tasks
 	UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tasks []models.Tasks) ([]models.Tasks, error)
 	DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error
+	CreateTaskHistory(tx *sqlx.Tx, workflowId string) ([]models.TaskHistory, error)
 }
 
 type TaskRepositoryImpl struct {
@@ -27,9 +28,14 @@ func NewTaskRepositoryImpl(db *sqlx.DB) TaskRepository {
 	}
 }
 
+// CreateTaskHistory implements TaskRepository.
+func (t *TaskRepositoryImpl) CreateTaskHistory(tx *sqlx.Tx, workflowId string) ([]models.TaskHistory, error) {
+	panic("unimplemented")
+}
+
 // get tasks by workflow id
 func (t *TaskRepositoryImpl) GetTasksByWorkflowId(workflowId string) []models.Tasks {
-	result, _ := DbExecAndReturnMany[models.Tasks](
+	result, _ := DbExecAndReturnManyOld[models.Tasks](
 		t,
 		queries.GET_TASK_BY_WORKFLOW_ID,
 		workflowId,
@@ -49,25 +55,16 @@ func (t *TaskRepositoryImpl) UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, task
 		statement = statement.Values(workflowId, val.Name, val.Description, parameters, val.Config, val.ConnectorName, val.Operation)
 	}
 
-	sql, args, err := statement.Suffix(`
+	statement = statement.Suffix(`
 		ON CONFLICT (workflow_id, name) DO UPDATE
    	SET description = EXCLUDED.description,
        parameters = EXCLUDED.parameters,
        updated_at = NOW()
-		RETURNING *`).ToSql()
-
-	logging.Sugar.Debug("UpsertTasks SQL: ", sql)
-	logging.Sugar.Debug("UpsertTasks Args: ", args)
-
-	if err != nil {
-		logging.Sugar.Error("Failed to build SQL query", err)
-		return nil, err
-	}
+		RETURNING *`)
 
 	return DbExecAndReturnMany[models.Tasks](
 		tx,
-		sql,
-		args...,
+		statement,
 	)
 }
 

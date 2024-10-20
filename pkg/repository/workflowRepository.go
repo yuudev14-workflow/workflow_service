@@ -1,13 +1,14 @@
 package repository
 
 import (
+	"time"
+
 	sq "github.com/Masterminds/squirrel"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/yuudev14-workflow/workflow-service/db/queries"
 	"github.com/yuudev14-workflow/workflow-service/dto"
 	"github.com/yuudev14-workflow/workflow-service/models"
-	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
 	"github.com/yuudev14-workflow/workflow-service/pkg/types"
 )
 
@@ -15,6 +16,7 @@ type WorkflowRepository interface {
 	GetWorkflowById(id string) (*models.Workflows, error)
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
 	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
+	CreateWorkflowHistory(id string) (*models.WorkflowHistory, error)
 }
 
 type WorkflowRepositoryImpl struct {
@@ -27,24 +29,28 @@ func NewWorkflowRepository(db *sqlx.DB) WorkflowRepository {
 	}
 }
 
+// CreateWorkflowHistory implements WorkflowRepository.
+func (w *WorkflowRepositoryImpl) CreateWorkflowHistory(id string) (*models.WorkflowHistory, error) {
+	statement := sq.Insert("workflow_history").Columns("workflow_id", "triggered_at").Values(id, time.Now()).Suffix("RETURNING *")
+	return DbExecAndReturnOne[models.WorkflowHistory](
+		w.DB,
+		statement,
+	)
+}
+
 // GetWorkflowById implements WorkflowRepository.
 func (w *WorkflowRepositoryImpl) GetWorkflowById(id string) (*models.Workflows, error) {
-	sql, args, err := sq.Select("*").From("workflows").Where("id = ?", id).ToSql()
-	logging.Sugar.Debugw("GetWorkflowById statement", "sql", sql, "args", args)
-	if err != nil {
-		logging.Sugar.Error("Error in GetWorkflowById", err)
-		return nil, err
-	}
+	statement := sq.Select("*").From("workflows").Where("id = ?", id)
 	return DbExecAndReturnOne[models.Workflows](
 		w.DB,
-		sql,
-		args...,
+		statement,
 	)
 }
 
 // function for creating a workflow:
 func (w *WorkflowRepositoryImpl) CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error) {
-	return DbExecAndReturnOne[models.Workflows](
+
+	return DbExecAndReturnOneOld[models.Workflows](
 		w.DB,
 		queries.INSERT_WORKFLOW, workflow.Name, workflow.Description, workflow.TriggerType,
 	)
@@ -59,17 +65,10 @@ func (w *WorkflowRepositoryImpl) UpdateWorkflow(id string, workflow dto.UpdateWo
 		"trigger_type": workflow.TriggerType.ToNullableAny(),
 	})
 
-	sql, args, err := sq.Update("workflows").SetMap(data).Where(sq.Eq{"id": id}).Suffix("RETURNING *").ToSql()
+	statement := sq.Update("workflows").SetMap(data).Where(sq.Eq{"id": id}).Suffix("RETURNING *")
 
-	logging.Sugar.Debug("UpdateWorkflow SQL: ", sql)
-	logging.Sugar.Debug("UpdateWorkflow Args: ", args)
-	if err != nil {
-		logging.Sugar.Error("Failed to build SQL query", err)
-		return nil, err
-	}
 	return DbExecAndReturnOne[models.Workflows](
 		w.DB,
-		sql,
-		args...,
+		statement,
 	)
 }

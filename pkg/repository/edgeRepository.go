@@ -36,22 +36,15 @@ func NewEdgeRepositoryImpl(db *sqlx.DB) EdgeRepository {
 
 // GetNodesByWorkflowId implements EdgeRepository.
 func (e *EdgeRepositoryImpl) GetEdgesByWorkflowId(workflowId string) ([]Edges, error) {
-	sql, args, err := sq.
+	statement := sq.
 		Select("e.*, t1.name AS source_task_name, t2.name AS destination_task_name").
 		From("edges e").Join("tasks t1 ON e.source_id = t1.id").
 		Join("tasks t2 ON e.destination_id = t2.id").
-		Where(sq.Eq{"t1.workflow_id": workflowId}).
-		ToSql()
-	logging.Sugar.Debug("GetNodesByWorkflowId SQL: ", sql)
-	logging.Sugar.Debug("GetNodesByWorkflowId Args: ", args)
-	if err != nil {
-		logging.Sugar.Error("Failed to build SQL query", err)
-		return nil, err
-	}
+		Where(sq.Eq{"t1.workflow_id": workflowId})
+
 	return DbExecAndReturnMany[Edges](
 		e.DB,
-		sql,
-		args...,
+		statement,
 	)
 }
 
@@ -64,20 +57,11 @@ func (e *EdgeRepositoryImpl) InsertEdges(tx *sqlx.Tx, edges []models.Edges) ([]m
 		statement = statement.Values(val.DestinationID, val.SourceID)
 	}
 
-	sql, args, err := statement.Suffix(`ON CONFLICT (destination_id, source_id) DO NOTHING RETURNING *`).ToSql()
-
-	logging.Sugar.Debug("InsertEdges SQL: ", sql)
-	logging.Sugar.Debug("InsertEdges Args: ", args)
-
-	if err != nil {
-		logging.Sugar.Error("Failed to build SQL query", err)
-		return nil, err
-	}
+	statement = statement.Suffix(`ON CONFLICT (destination_id, source_id) DO NOTHING RETURNING *`)
 
 	return DbExecAndReturnMany[models.Edges](
 		tx,
-		sql,
-		args...,
+		statement,
 	)
 }
 

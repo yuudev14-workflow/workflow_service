@@ -4,17 +4,55 @@ import (
 	"context"
 	"database/sql"
 
+	sq "github.com/Masterminds/squirrel"
+
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
 	"github.com/yuudev14-workflow/workflow-service/pkg/types"
 )
 
-func DbExecAndReturnOne[T any](DB *sqlx.DB, query string, args ...interface{}) (*T, error) {
+// // CreateWorkflowHistory implements WorkflowRepository.
+// func (w *WorkflowRepositoryImpl) CreateWorkflowHistory(id string) (*models.WorkflowHistory, error) {
+// 	sql, args, err := sq.Insert("workflow_history").Columns("workflow_id", "triggered_at").Values(id, time.Now()).Suffix("RETURNING *").ToSql()
+// 	logging.Sugar.Debugw("GetWorkflowById statement", "sql", sql, "args", args)
+// 	if err != nil {
+// 		logging.Sugar.Error("Error in GetWorkflowById", err)
+// 		return nil, err
+// 	}
+// 	return DbExecAndReturnOne[models.WorkflowHistory](
+// 		w.DB,
+// 		sql,
+// 		args...,
+// 	)
+// }
+
+func DbExecAndReturnOne[T any](execer sqlx.ExtContext, sqlizer sq.Sqlizer) (*T, error) {
 	var dest T
-	query = DB.Rebind(query)
+	query, args, err := sqlizer.ToSql()
+	logging.Sugar.Debugw("statement", "sql", query, "args", args)
+	if err != nil {
+		logging.Sugar.Error(err)
+		return nil, err
+	}
+	query = execer.Rebind(query)
 	logging.Sugar.Debug(query, args)
-	err := DB.Get(&dest, query, args...)
+	sqlErr := sqlx.SelectContext(context.Background(), execer, &dest, query, args...)
+	if sqlErr != nil {
+		logging.Sugar.Warn(sqlErr)
+		if sqlErr == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, sqlErr
+	}
+	return &dest, nil
+}
+
+func DbExecAndReturnOneOld[T any](execer sqlx.ExtContext, query string, args ...interface{}) (*T, error) {
+	var dest T
+	query = execer.Rebind(query)
+	logging.Sugar.Debug(query, args)
+	err := sqlx.SelectContext(context.Background(), execer, &dest, query, args...)
 	if err != nil {
 		logging.Sugar.Warn(err)
 		if err == sql.ErrNoRows {
@@ -38,7 +76,31 @@ func DbExecAndReturnOne[T any](DB *sqlx.DB, query string, args ...interface{}) (
 // 	return dest, nil
 // }
 
-func DbExecAndReturnMany[T any](execer sqlx.ExtContext, query string, args ...interface{}) ([]T, error) {
+func DbExecAndReturnMany[T any](execer sqlx.ExtContext, sqlizer sq.Sqlizer) ([]T, error) {
+	var dest []T
+	query, args, err := sqlizer.ToSql()
+	logging.Sugar.Debugw("statement", "sql", query, "args", args)
+	if err != nil {
+		logging.Sugar.Error(err)
+		return nil, err
+	}
+	query = execer.Rebind(query)
+	sqlErr := sqlx.SelectContext(context.Background(), execer, &dest, query, args...)
+	if sqlErr != nil {
+		logging.Sugar.Errorw("Error in query", "query", query, "args", args, "err", sqlErr)
+		if sqlErr == sql.ErrNoRows {
+			return []T{}, nil
+		}
+		return []T{}, sqlErr
+	}
+
+	if dest == nil {
+		return []T{}, nil
+	}
+	return dest, nil
+}
+
+func DbExecAndReturnManyOld[T any](execer sqlx.ExtContext, query string, args ...interface{}) ([]T, error) {
 	var dest []T
 	query = execer.Rebind(query)
 	logging.Sugar.Debugw("Executing query", "query", query, "args", args)
