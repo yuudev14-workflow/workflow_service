@@ -4,6 +4,20 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Enable gen_salt extension
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+-- create enums
+CREATE TYPE workflow_status AS ENUM (
+    'in_progress', 
+    'success',
+    'failed'
+);
+
+CREATE TYPE task_status AS ENUM (
+    'pending',
+    'in_progress', 
+    'success',
+    'failed'
+);
+
 -- Create tables
 CREATE TABLE IF NOT EXISTS
   users (
@@ -34,11 +48,13 @@ CREATE TABLE
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
   );
 
+
+
 CREATE TABLE
   IF NOT EXISTS workflow_history (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
     workflow_id UUID REFERENCES workflows (id) ON DELETE CASCADE,
-    status VARCHAR(20),
+    status workflow_status NOT NULL DEFAULT 'in_progress',
     triggered_at TIMESTAMP NOT NULL DEFAULT NOW()
   );
 
@@ -72,6 +88,6 @@ CREATE TABLE
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
     workflow_history_id UUID REFERENCES workflow_history (id) ON DELETE CASCADE,
     task_id UUID REFERENCES tasks (id) ON DELETE CASCADE,
-    status VARCHAR(20),
+    status task_status NOT NULL DEFAULT 'pending',
     triggered_at TIMESTAMP NOT NULL DEFAULT NOW()
   );
