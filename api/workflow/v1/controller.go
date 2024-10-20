@@ -286,21 +286,21 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 	workflowUUID, err := uuid.Parse(workflowId)
 
 	if err != nil {
-		response.ResponseError(http.StatusInternalServerError, err)
+		response.ResponseError(http.StatusInternalServerError, err.Error())
 		return
 	}
 	deleteEdgesErr := w.DeleteEdges(tx, workflowUUID, body.Edges)
 	if deleteEdgesErr != nil {
 		logging.Sugar.Error(deleteEdgesErr)
 		tx.Rollback()
-		response.ResponseError(http.StatusBadRequest, deleteEdgesErr)
+		response.ResponseError(http.StatusBadRequest, deleteEdgesErr.Error())
 		return
 	}
 	insertedTasks, upsertTasksErr := w.UpsertTasks(tx, workflowUUID, body.Nodes)
 	if upsertTasksErr != nil {
 		logging.Sugar.Error(upsertTasksErr)
 		tx.Rollback()
-		response.ResponseError(http.StatusBadRequest, upsertTasksErr)
+		response.ResponseError(http.StatusBadRequest, upsertTasksErr.Error())
 		return
 	}
 	deleteTaskError := w.DeleteTasks(tx, workflowUUID, body.Nodes)
@@ -373,6 +373,7 @@ func (w *WorkflowController) Trigger(c *gin.Context) {
 	if triggerErr != nil {
 		logging.Sugar.Errorf("error when sending the message to queue", triggerErr)
 		response.ResponseError(http.StatusBadGateway, triggerErr.Error())
+		return
 	}
 
 	response.Response(http.StatusAccepted, "triggered successfully")

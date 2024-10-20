@@ -37,7 +37,7 @@ func DbExecAndReturnOne[T any](execer sqlx.ExtContext, sqlizer sq.Sqlizer) (*T, 
 	}
 	query = execer.Rebind(query)
 	logging.Sugar.Debug(query, args)
-	sqlErr := sqlx.SelectContext(context.Background(), execer, &dest, query, args...)
+	sqlErr := sqlx.GetContext(context.Background(), execer, &dest, query, args...)
 	if sqlErr != nil {
 		logging.Sugar.Warn(sqlErr)
 		if sqlErr == sql.ErrNoRows {
@@ -52,7 +52,7 @@ func DbExecAndReturnOneOld[T any](execer sqlx.ExtContext, query string, args ...
 	var dest T
 	query = execer.Rebind(query)
 	logging.Sugar.Debug(query, args)
-	err := sqlx.SelectContext(context.Background(), execer, &dest, query, args...)
+	err := sqlx.GetContext(context.Background(), execer, &dest, query, args...)
 	if err != nil {
 		logging.Sugar.Warn(err)
 		if err == sql.ErrNoRows {

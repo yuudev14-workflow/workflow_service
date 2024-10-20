@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/yuudev14-workflow/workflow-service/db"
 	"github.com/yuudev14-workflow/workflow-service/models"
 	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
 	"github.com/yuudev14-workflow/workflow-service/pkg/mq"
@@ -47,6 +48,38 @@ func (w *WorkflowTriggerServiceImpl) TriggerWorkflow(workflowId string) error {
 		return edgesErr
 	}
 	tasksMap, graph := w.PrepareWorkflowMessage(tasks, edges)
+
+	// create transacton
+
+	tx, txErr := db.DB.Beginx()
+	if txErr != nil {
+		tx.Rollback()
+		return txErr
+	}
+
+	workflowHistory, workflowHistoryErr := w.WorkflowService.CreateWorkflowHistory(tx, workflowId)
+	if workflowHistoryErr != nil {
+		tx.Rollback()
+		return workflowHistoryErr
+	}
+
+	// Log the ID to verify it's correct
+	logging.Sugar.Infof("Created workflow history with ID: %v", workflowHistory.ID)
+	_, createTaskHistoryErr := w.TaskService.CreateTaskHistory(tx, workflowHistory.ID.String(), tasks)
+
+	if createTaskHistoryErr != nil {
+		tx.Rollback()
+		return createTaskHistoryErr
+	}
+
+	commitErr := tx.Commit()
+
+	if commitErr != nil {
+		logging.Sugar.Error(commitErr)
+		tx.Rollback()
+		return commitErr
+
+	}
 
 	mqErr := mq.SendTaskMessage(mq.TaskMessage{
 		Graph: graph,

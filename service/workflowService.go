@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/yuudev14-workflow/workflow-service/dto"
 	"github.com/yuudev14-workflow/workflow-service/models"
 	"github.com/yuudev14-workflow/workflow-service/pkg/repository"
@@ -12,6 +13,7 @@ type WorkflowService interface {
 	GetWorkflowById(id string) (*models.Workflows, error)
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
 	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
+	CreateWorkflowHistory(tx *sqlx.Tx, id string) (*models.WorkflowHistory, error)
 }
 
 type WorkflowServiceImpl struct {
@@ -22,6 +24,11 @@ func NewWorkflowService(WorkflowRepository repository.WorkflowRepository) Workfl
 	return &WorkflowServiceImpl{
 		WorkflowRepository: WorkflowRepository,
 	}
+}
+
+// CreateWorkflowHistory implements WorkflowService.
+func (w *WorkflowServiceImpl) CreateWorkflowHistory(tx *sqlx.Tx, id string) (*models.WorkflowHistory, error) {
+	return w.WorkflowRepository.CreateWorkflowHistory(tx, id)
 }
 
 // GetWorkflowById implements WorkflowService.

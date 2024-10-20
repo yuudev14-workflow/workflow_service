@@ -11,6 +11,7 @@ type TaskService interface {
 	GetTasksByWorkflowId(workflowId string) ([]models.Tasks, error)
 	UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tasks []models.Tasks) ([]models.Tasks, error)
 	DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error
+	CreateTaskHistory(tx *sqlx.Tx, workflowHistoryId string, tasks []models.Tasks) ([]models.TaskHistory, error)
 }
 
 type TaskServiceImpl struct {
@@ -23,6 +24,11 @@ func NewTaskServiceImpl(TaskService repository.TaskRepository, WorkflowService W
 		TaskRepository:  TaskService,
 		WorkflowService: WorkflowService,
 	}
+}
+
+// CreateTaskHistory implements TaskService.
+func (t *TaskServiceImpl) CreateTaskHistory(tx *sqlx.Tx, workflowHistoryId string, tasks []models.Tasks) ([]models.TaskHistory, error) {
+	return t.TaskRepository.CreateTaskHistory(tx, workflowHistoryId, tasks)
 }
 
 // get tasks by workflow id
