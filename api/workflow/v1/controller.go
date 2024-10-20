@@ -11,23 +11,29 @@ import (
 	"github.com/yuudev14-workflow/workflow-service/dto"
 	"github.com/yuudev14-workflow/workflow-service/models"
 	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
-	"github.com/yuudev14-workflow/workflow-service/pkg/mq"
 	rest "github.com/yuudev14-workflow/workflow-service/pkg/rests"
 	"github.com/yuudev14-workflow/workflow-service/pkg/types"
 	"github.com/yuudev14-workflow/workflow-service/service"
 )
 
 type WorkflowController struct {
-	WorkflowService service.WorkflowService
-	TaskService     service.TaskService
-	EdgeService     service.EdgeService
+	WorkflowService        service.WorkflowService
+	TaskService            service.TaskService
+	EdgeService            service.EdgeService
+	WorkflowTriggerService service.WorkflowTriggerService
 }
 
-func NewWorkflowController(WorkflowService service.WorkflowService, TaskService service.TaskService, EdgeService service.EdgeService) *WorkflowController {
+func NewWorkflowController(
+	WorkflowService service.WorkflowService,
+	TaskService service.TaskService,
+	EdgeService service.EdgeService,
+	WorkflowTriggerService service.WorkflowTriggerService,
+) *WorkflowController {
 	return &WorkflowController{
-		WorkflowService: WorkflowService,
-		TaskService:     TaskService,
-		EdgeService:     EdgeService,
+		WorkflowService:        WorkflowService,
+		TaskService:            TaskService,
+		EdgeService:            EdgeService,
+		WorkflowTriggerService: WorkflowTriggerService,
 	}
 }
 
@@ -363,57 +369,11 @@ func (w *WorkflowController) GetTasksByWorkflowId(c *gin.Context) {
 func (w *WorkflowController) Trigger(c *gin.Context) {
 	response := rest.Response{C: c}
 	workflowId := c.Param("workflow_id")
-	_, workflowErr := w.WorkflowService.GetWorkflowById(workflowId)
-
-	if workflowErr != nil {
-		logging.Sugar.Error(workflowErr)
-		response.ResponseError(http.StatusInternalServerError, workflowErr.Error())
-		return
-	}
-	tasks, tasksErr := w.TaskService.GetTasksByWorkflowId(workflowId)
-	if tasksErr != nil {
-		logging.Sugar.Errorf("error: ", tasksErr)
-		response.ResponseError(http.StatusBadRequest, tasksErr.Error())
-		return
+	triggerErr := w.WorkflowTriggerService.TriggerWorkflow(workflowId)
+	if triggerErr != nil {
+		logging.Sugar.Errorf("error when sending the message to queue", triggerErr)
+		response.ResponseError(http.StatusBadGateway, triggerErr.Error())
 	}
 
-	edges, _ := w.EdgeService.GetEdgesByWorkflowId(workflowId)
-
-	tasksMap := make(map[string]models.Tasks)
-	graph := map[string][]string{}
-
-	for _, task := range tasks {
-		tasksMap[task.Name] = task
-	}
-
-	for _, edge := range edges {
-		children, ok := graph[edge.SourceTaskName]
-		if ok {
-			graph[edge.SourceTaskName] = append(children, edge.DestinationTaskName)
-		} else {
-			graph[edge.SourceTaskName] = []string{edge.DestinationTaskName}
-		}
-
-		_, taskNameOk := graph[edge.DestinationTaskName]
-
-		if !taskNameOk {
-			graph[edge.DestinationTaskName] = []string{}
-		}
-	}
-
-	// Publish a message to the queue
-
-	mqErr := mq.SendTaskMessage(mq.TaskMessage{
-		Graph: graph,
-		Tasks: tasksMap,
-	})
-	if mqErr != nil {
-		logging.Sugar.Errorf("error when sending the message to queue", mqErr)
-		response.ResponseError(http.StatusBadGateway, mqErr.Error())
-	}
-
-	response.Response(http.StatusAccepted, gin.H{
-		"tasks": tasks,
-		"edges": graph,
-	})
+	response.Response(http.StatusAccepted, "triggered successfully")
 }
