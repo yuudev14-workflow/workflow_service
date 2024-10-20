@@ -2,6 +2,7 @@ package repository
 
 import (
 	"encoding/json"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -15,7 +16,7 @@ type TaskRepository interface {
 	GetTasksByWorkflowId(workflowId string) []models.Tasks
 	UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tasks []models.Tasks) ([]models.Tasks, error)
 	DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error
-	CreateTaskHistory(tx *sqlx.Tx, workflowId string) ([]models.TaskHistory, error)
+	CreateTaskHistory(tx *sqlx.Tx, workflowHistoryId string, tasks []models.Tasks) ([]models.TaskHistory, error)
 }
 
 type TaskRepositoryImpl struct {
@@ -29,8 +30,19 @@ func NewTaskRepositoryImpl(db *sqlx.DB) TaskRepository {
 }
 
 // CreateTaskHistory implements TaskRepository.
-func (t *TaskRepositoryImpl) CreateTaskHistory(tx *sqlx.Tx, workflowId string) ([]models.TaskHistory, error) {
-	panic("unimplemented")
+func (t *TaskRepositoryImpl) CreateTaskHistory(tx *sqlx.Tx, workflowHistoryId string, tasks []models.Tasks) ([]models.TaskHistory, error) {
+	statement := sq.Insert("task_history").Columns("workflow_history_id", "task_id", "triggered_at")
+
+	for _, val := range tasks {
+		statement = statement.Values(workflowHistoryId, val.ID, time.Now())
+	}
+
+	statement = statement.Suffix(`RETURNING *`)
+
+	return DbExecAndReturnMany[models.TaskHistory](
+		tx,
+		statement,
+	)
 }
 
 // get tasks by workflow id
@@ -40,6 +52,7 @@ func (t *TaskRepositoryImpl) GetTasksByWorkflowId(workflowId string) []models.Ta
 		queries.GET_TASK_BY_WORKFLOW_ID,
 		workflowId,
 	)
+
 	return result
 }
 
