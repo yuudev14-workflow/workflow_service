@@ -14,6 +14,7 @@ type WorkflowService interface {
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
 	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
 	CreateWorkflowHistory(tx *sqlx.Tx, id string) (*models.WorkflowHistory, error)
+	UpdateWorkflowHistoryStatus(workflowHistoryId string, status string) (*models.WorkflowHistory, error)
 }
 
 type WorkflowServiceImpl struct {
@@ -52,4 +53,9 @@ func (w *WorkflowServiceImpl) CreateWorkflow(workflow dto.WorkflowPayload) (*mod
 // updateWorkflow implements WorkflowRepository.
 func (w *WorkflowServiceImpl) UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error) {
 	return w.WorkflowRepository.UpdateWorkflow(id, workflow)
+}
+
+// UpdateWorkflowHistoryStatus implements WorkflowRepository.
+func (w *WorkflowServiceImpl) UpdateWorkflowHistoryStatus(workflowHistoryId string, status string) (*models.WorkflowHistory, error) {
+	return w.WorkflowRepository.UpdateWorkflowHistoryStatus(workflowHistoryId, status)
 }

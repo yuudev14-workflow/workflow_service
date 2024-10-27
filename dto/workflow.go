@@ -24,6 +24,10 @@ type UpdateWorkflowtasks struct {
 	Edges map[string][]string `json:"edges"`
 }
 
+type UpdateWorkflowTaskHistoryStatus struct {
+	Status string `json:"status" binding:"required"`
+}
+
 type WorkflowPayload struct {
 	Name        string  `json:"name" binding:"required"`
 	Description *string `json:"description,omitempty"`

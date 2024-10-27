@@ -12,6 +12,7 @@ type TaskService interface {
 	UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tasks []models.Tasks) ([]models.Tasks, error)
 	DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error
 	CreateTaskHistory(tx *sqlx.Tx, workflowHistoryId string, tasks []models.Tasks) ([]models.TaskHistory, error)
+	UpdateTaskStatus(workflowHistoryId string, taskId string, status string) (*models.TaskHistory, error)
 }
 
 type TaskServiceImpl struct {
@@ -50,4 +51,9 @@ func (t *TaskServiceImpl) UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tasks [
 // Delete multiple tasks based on the taskIds
 func (t *TaskServiceImpl) DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error {
 	return t.TaskRepository.DeleteTasks(tx, taskIds)
+}
+
+// UpdateTaskStatus implements TaskService.
+func (t *TaskServiceImpl) UpdateTaskStatus(workflowHistoryId string, taskId string, status string) (*models.TaskHistory, error) {
+	return t.TaskRepository.UpdateTaskStatus(workflowHistoryId, taskId, status)
 }

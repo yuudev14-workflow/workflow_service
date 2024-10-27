@@ -378,3 +378,101 @@ func (w *WorkflowController) Trigger(c *gin.Context) {
 
 	response.Response(http.StatusAccepted, "triggered successfully")
 }
+
+func validateTaskStateChangePayload(body dto.UpdateWorkflowTaskHistoryStatus) error {
+	status := []string{
+		"pending",
+		"in_progress",
+		"success",
+		"failed",
+	}
+
+	for _, _status := range status {
+		if body.Status == _status {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("status does not exist in the choices %v", status)
+}
+
+func validateWorkflowStateChangePayload(body dto.UpdateWorkflowTaskHistoryStatus) error {
+	status := []string{
+		"in_progress",
+		"success",
+		"failed",
+	}
+
+	for _, _status := range status {
+		if body.Status == _status {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("status does not exist in the choices %v", status)
+}
+
+func (w *WorkflowController) UpdateTaskStatus(c *gin.Context) {
+	response := rest.Response{C: c}
+	workflowHistoryId := c.Param("workflow_history_id")
+	taskId := c.Param("task_id")
+	var body dto.UpdateWorkflowTaskHistoryStatus
+
+	check, code, validErr := rest.BindFormAndValidate(c, &body)
+
+	if !check {
+		logging.Sugar.Errorf(fmt.Sprintf("%v", validErr))
+		response.ResponseError(code, validErr)
+		return
+	}
+
+	payloadErr := validateTaskStateChangePayload(body)
+
+	if payloadErr != nil {
+		logging.Sugar.Errorf(fmt.Sprintf("%v", validErr))
+		response.ResponseError(http.StatusBadRequest, validErr)
+		return
+	}
+
+	task, updateTaskErr := w.TaskService.UpdateTaskStatus(workflowHistoryId, taskId, body.Status)
+
+	if updateTaskErr != nil {
+		logging.Sugar.Errorf(fmt.Sprintf("%v", updateTaskErr))
+		response.ResponseError(http.StatusBadRequest, updateTaskErr)
+		return
+	}
+
+	response.Response(http.StatusAccepted, task)
+}
+
+func (w *WorkflowController) UpdateWorkflowStatus(c *gin.Context) {
+	response := rest.Response{C: c}
+	workflowHistoryId := c.Param("workflow_histor_id")
+	var body dto.UpdateWorkflowTaskHistoryStatus
+
+	check, code, validErr := rest.BindFormAndValidate(c, &body)
+
+	if !check {
+		logging.Sugar.Errorf(fmt.Sprintf("%v", validErr))
+		response.ResponseError(code, validErr)
+		return
+	}
+
+	payloadErr := validateWorkflowStateChangePayload(body)
+
+	if payloadErr != nil {
+		logging.Sugar.Errorf(fmt.Sprintf("%v", validErr))
+		response.ResponseError(http.StatusBadRequest, validErr)
+		return
+	}
+
+	workflow, updateWorkflowErr := w.WorkflowService.UpdateWorkflowHistoryStatus(workflowHistoryId, body.Status)
+
+	if updateWorkflowErr != nil {
+		logging.Sugar.Errorf(fmt.Sprintf("%v", updateWorkflowErr))
+		response.ResponseError(http.StatusBadRequest, updateWorkflowErr)
+		return
+	}
+
+	response.Response(http.StatusAccepted, workflow)
+}

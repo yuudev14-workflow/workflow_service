@@ -17,6 +17,7 @@ type TaskRepository interface {
 	UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, tasks []models.Tasks) ([]models.Tasks, error)
 	DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error
 	CreateTaskHistory(tx *sqlx.Tx, workflowHistoryId string, tasks []models.Tasks) ([]models.TaskHistory, error)
+	UpdateTaskStatus(workflowHistoryId string, taskId string, status string) (*models.TaskHistory, error)
 }
 
 type TaskRepositoryImpl struct {
@@ -97,4 +98,13 @@ func (t *TaskRepositoryImpl) DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error
 	}
 
 	return err
+}
+
+// UpdateTaskStatus implements TaskRepository.
+func (t *TaskRepositoryImpl) UpdateTaskStatus(workflowHistoryId string, taskId string, status string) (*models.TaskHistory, error) {
+	statement := sq.Update("task_history").Set("status", status).Where(sq.Eq{"id": workflowHistoryId, "task_id": taskId}).Suffix("RETURNING *")
+	return DbExecAndReturnOne[models.TaskHistory](
+		t.DB,
+		statement,
+	)
 }
