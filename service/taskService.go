@@ -1,6 +1,8 @@
 package service
 
 import (
+	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/yuudev14-workflow/workflow-service/models"
@@ -55,5 +57,14 @@ func (t *TaskServiceImpl) DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error {
 
 // UpdateTaskStatus implements TaskService.
 func (t *TaskServiceImpl) UpdateTaskStatus(workflowHistoryId string, taskId string, status string) (*models.TaskHistory, error) {
-	return t.TaskRepository.UpdateTaskStatus(workflowHistoryId, taskId, status)
+	res, err := t.TaskRepository.UpdateTaskStatus(workflowHistoryId, taskId, status)
+	if err != nil {
+		return nil, err
+	}
+
+	if res == nil {
+		return nil, fmt.Errorf("no task history was updated")
+	}
+
+	return res, nil
 }

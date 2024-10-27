@@ -102,7 +102,7 @@ func (t *TaskRepositoryImpl) DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error
 
 // UpdateTaskStatus implements TaskRepository.
 func (t *TaskRepositoryImpl) UpdateTaskStatus(workflowHistoryId string, taskId string, status string) (*models.TaskHistory, error) {
-	statement := sq.Update("task_history").Set("status", status).Where(sq.Eq{"id": workflowHistoryId, "task_id": taskId}).Suffix("RETURNING *")
+	statement := sq.Update("task_history").Set("status", status).Where("workflow_history_id = ? and task_id = ?", workflowHistoryId, taskId).Suffix("RETURNING *")
 	return DbExecAndReturnOne[models.TaskHistory](
 		t.DB,
 		statement,

@@ -57,5 +57,15 @@ func (w *WorkflowServiceImpl) UpdateWorkflow(id string, workflow dto.UpdateWorkf
 
 // UpdateWorkflowHistoryStatus implements WorkflowRepository.
 func (w *WorkflowServiceImpl) UpdateWorkflowHistoryStatus(workflowHistoryId string, status string) (*models.WorkflowHistory, error) {
-	return w.WorkflowRepository.UpdateWorkflowHistoryStatus(workflowHistoryId, status)
+	res, err := w.WorkflowRepository.UpdateWorkflowHistoryStatus(workflowHistoryId, status)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if res == nil {
+		return nil, fmt.Errorf("no workflow status was updated")
+	}
+
+	return res, nil
 }

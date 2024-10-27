@@ -429,8 +429,8 @@ func (w *WorkflowController) UpdateTaskStatus(c *gin.Context) {
 	payloadErr := validateTaskStateChangePayload(body)
 
 	if payloadErr != nil {
-		logging.Sugar.Errorf(fmt.Sprintf("%v", validErr))
-		response.ResponseError(http.StatusBadRequest, validErr)
+		logging.Sugar.Errorf(fmt.Sprintf("%v", payloadErr))
+		response.ResponseError(http.StatusBadRequest, payloadErr.Error())
 		return
 	}
 
@@ -438,7 +438,7 @@ func (w *WorkflowController) UpdateTaskStatus(c *gin.Context) {
 
 	if updateTaskErr != nil {
 		logging.Sugar.Errorf(fmt.Sprintf("%v", updateTaskErr))
-		response.ResponseError(http.StatusBadRequest, updateTaskErr)
+		response.ResponseError(http.StatusBadRequest, updateTaskErr.Error())
 		return
 	}
 
@@ -447,7 +447,7 @@ func (w *WorkflowController) UpdateTaskStatus(c *gin.Context) {
 
 func (w *WorkflowController) UpdateWorkflowStatus(c *gin.Context) {
 	response := rest.Response{C: c}
-	workflowHistoryId := c.Param("workflow_histor_id")
+	workflowHistoryId := c.Param("workflow_history_id")
 	var body dto.UpdateWorkflowTaskHistoryStatus
 
 	check, code, validErr := rest.BindFormAndValidate(c, &body)
@@ -461,8 +461,8 @@ func (w *WorkflowController) UpdateWorkflowStatus(c *gin.Context) {
 	payloadErr := validateWorkflowStateChangePayload(body)
 
 	if payloadErr != nil {
-		logging.Sugar.Errorf(fmt.Sprintf("%v", validErr))
-		response.ResponseError(http.StatusBadRequest, validErr)
+		logging.Sugar.Errorf(fmt.Sprintf("%v", payloadErr))
+		response.ResponseError(http.StatusBadRequest, payloadErr.Error())
 		return
 	}
 
@@ -470,7 +470,7 @@ func (w *WorkflowController) UpdateWorkflowStatus(c *gin.Context) {
 
 	if updateWorkflowErr != nil {
 		logging.Sugar.Errorf(fmt.Sprintf("%v", updateWorkflowErr))
-		response.ResponseError(http.StatusBadRequest, updateWorkflowErr)
+		response.ResponseError(http.StatusBadRequest, updateWorkflowErr.Error())
 		return
 	}
 
