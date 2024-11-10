@@ -14,6 +14,7 @@ type WorkflowService interface {
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
 	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
 	CreateWorkflowHistory(tx *sqlx.Tx, id string) (*models.WorkflowHistory, error)
+	UpdateWorkflowHistory(workflowHistoryId string, workflowHistory dto.UpdateWorkflowHistoryData) (*models.WorkflowHistory, error)
 	UpdateWorkflowHistoryStatus(workflowHistoryId string, status string) (*models.WorkflowHistory, error)
 }
 
@@ -58,6 +59,21 @@ func (w *WorkflowServiceImpl) UpdateWorkflow(id string, workflow dto.UpdateWorkf
 // UpdateWorkflowHistoryStatus implements WorkflowRepository.
 func (w *WorkflowServiceImpl) UpdateWorkflowHistoryStatus(workflowHistoryId string, status string) (*models.WorkflowHistory, error) {
 	res, err := w.WorkflowRepository.UpdateWorkflowHistoryStatus(workflowHistoryId, status)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if res == nil {
+		return nil, fmt.Errorf("no workflow status was updated")
+	}
+
+	return res, nil
+}
+
+// UpdateWorkflowHistoryStatus implements WorkflowRepository.
+func (w *WorkflowServiceImpl) UpdateWorkflowHistory(workflowHistoryId string, workflowHistory dto.UpdateWorkflowHistoryData) (*models.WorkflowHistory, error) {
+	res, err := w.WorkflowRepository.UpdateWorkflowHistory(workflowHistoryId, workflowHistory)
 
 	if err != nil {
 		return nil, err

@@ -5,9 +5,11 @@ import (
 	"fmt"
 
 	"github.com/yuudev14-workflow/workflow-service/db"
+	"github.com/yuudev14-workflow/workflow-service/dto"
 	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
 	"github.com/yuudev14-workflow/workflow-service/pkg/mq"
 	"github.com/yuudev14-workflow/workflow-service/pkg/repository"
+	"github.com/yuudev14-workflow/workflow-service/pkg/types"
 	"github.com/yuudev14-workflow/workflow-service/service"
 )
 
@@ -17,18 +19,18 @@ type MessageBody struct {
 }
 
 type TaskStatusPayload struct {
-	WorkflowHistoryId string      `json:"workflow_history_id"`
-	TaskId            string      `json:"task_id"`
-	Status            string      `json:"status"`
-	Result            interface{} `json:"result,omitempty"`
-	Error             *string     `json:"error,omitempty"`
+	WorkflowHistoryId string                 `json:"workflow_history_id"`
+	TaskId            string                 `json:"task_id"`
+	Status            types.Nullable[string] `json:"status,omitempty"`
+	Error             types.Nullable[string] `json:"error,omitempty"`
+	Result            types.Nullable[string] `json:"result,omitempty"`
 }
 
 type WorkflowStatusPayload struct {
-	WorkflowHistoryId string      `json:"workflow_history_id"`
-	Status            string      `json:"status"`
-	Result            interface{} `json:"result,omitempty"`
-	Error             *string     `json:"error,omitempty"`
+	WorkflowHistoryId string                 `json:"workflow_history_id"`
+	Status            types.Nullable[string] `json:"status,omitempty"`
+	Error             types.Nullable[string] `json:"error,omitempty"`
+	Result            types.Nullable[string] `json:"result,omitempty"`
 }
 
 type ConsumeMessage struct {
@@ -53,7 +55,11 @@ func (c *ConsumeMessage) handleTask(params []byte) {
 		logging.Sugar.Error("Error unmarshalling task params:", err)
 		return
 	}
-	c.TaskService.UpdateTaskStatus(taskParams.WorkflowHistoryId, taskParams.TaskId, taskParams.Status)
+	c.TaskService.UpdateTaskHistory(taskParams.WorkflowHistoryId, taskParams.TaskId, dto.UpdateTaskHistoryData{
+		Status: taskParams.Status,
+		Error:  taskParams.Error,
+		Result: taskParams.Result,
+	})
 }
 
 func (c *ConsumeMessage) handleWorkflow(params []byte) {
@@ -62,7 +68,11 @@ func (c *ConsumeMessage) handleWorkflow(params []byte) {
 		logging.Sugar.Error("Error unmarshalling workflow params:", err)
 		return
 	}
-	c.WorkflowService.UpdateWorkflowHistoryStatus(workflowParams.WorkflowHistoryId, workflowParams.Status)
+	c.WorkflowService.UpdateWorkflowHistory(workflowParams.WorkflowHistoryId, dto.UpdateWorkflowHistoryData{
+		Status: workflowParams.Status,
+		Error:  workflowParams.Error,
+		Result: workflowParams.Result,
+	})
 
 }
 

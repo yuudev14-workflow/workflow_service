@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/yuudev14-workflow/workflow-service/dto"
 	"github.com/yuudev14-workflow/workflow-service/models"
 	"github.com/yuudev14-workflow/workflow-service/pkg/repository"
 )
@@ -15,6 +16,7 @@ type TaskService interface {
 	DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error
 	CreateTaskHistory(tx *sqlx.Tx, workflowHistoryId string, tasks []models.Tasks) ([]models.TaskHistory, error)
 	UpdateTaskStatus(workflowHistoryId string, taskId string, status string) (*models.TaskHistory, error)
+	UpdateTaskHistory(workflowHistoryId string, taskId string, taskHistory dto.UpdateTaskHistoryData) (*models.TaskHistory, error)
 }
 
 type TaskServiceImpl struct {
@@ -58,6 +60,20 @@ func (t *TaskServiceImpl) DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error {
 // UpdateTaskStatus implements TaskService.
 func (t *TaskServiceImpl) UpdateTaskStatus(workflowHistoryId string, taskId string, status string) (*models.TaskHistory, error) {
 	res, err := t.TaskRepository.UpdateTaskStatus(workflowHistoryId, taskId, status)
+	if err != nil {
+		return nil, err
+	}
+
+	if res == nil {
+		return nil, fmt.Errorf("no task history was updated")
+	}
+
+	return res, nil
+}
+
+// UpdateTaskStatus implements TaskService.
+func (t *TaskServiceImpl) UpdateTaskHistory(workflowHistoryId string, taskId string, taskHistory dto.UpdateTaskHistoryData) (*models.TaskHistory, error) {
+	res, err := t.TaskRepository.UpdateTaskHistory(workflowHistoryId, taskId, taskHistory)
 	if err != nil {
 		return nil, err
 	}

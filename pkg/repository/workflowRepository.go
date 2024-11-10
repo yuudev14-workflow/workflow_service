@@ -18,6 +18,7 @@ type WorkflowRepository interface {
 	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
 	CreateWorkflowHistory(tx *sqlx.Tx, id string) (*models.WorkflowHistory, error)
 	UpdateWorkflowHistoryStatus(workflow_history_id string, status string) (*models.WorkflowHistory, error)
+	UpdateWorkflowHistory(workflowHistoryId string, workflowHistory dto.UpdateWorkflowHistoryData) (*models.WorkflowHistory, error)
 }
 
 type WorkflowRepositoryImpl struct {
@@ -69,6 +70,20 @@ func (w *WorkflowRepositoryImpl) UpdateWorkflow(id string, workflow dto.UpdateWo
 	statement := sq.Update("workflows").SetMap(data).Where(sq.Eq{"id": id}).Suffix("RETURNING *")
 
 	return DbExecAndReturnOne[models.Workflows](
+		w.DB,
+		statement,
+	)
+}
+
+// UpdateWorkflowHistory implements WorkflowRepository.
+func (w *WorkflowRepositoryImpl) UpdateWorkflowHistory(workflowHistoryId string, workflowHistory dto.UpdateWorkflowHistoryData) (*models.WorkflowHistory, error) {
+	data := GenerateKeyValueQuery(map[string]types.Nullable[any]{
+		"status": workflowHistory.Status.ToNullableAny(),
+		"error":  workflowHistory.Error.ToNullableAny(),
+		"result": workflowHistory.Result.ToNullableAny(),
+	})
+	statement := sq.Update("workflow_history").SetMap(data).Where(sq.Eq{"id": workflowHistoryId}).Suffix("RETURNING *")
+	return DbExecAndReturnOne[models.WorkflowHistory](
 		w.DB,
 		statement,
 	)

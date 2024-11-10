@@ -10,6 +10,18 @@ type UpdateWorkflowData struct {
 	TriggerType types.Nullable[string] `json:"trigger_type,omitempty"`
 }
 
+type UpdateWorkflowHistoryData struct {
+	Status types.Nullable[string] `json:"status,omitempty"`
+	Error  types.Nullable[string] `json:"error,omitempty"`
+	Result types.Nullable[string] `json:"result,omitempty"`
+}
+
+type UpdateTaskHistoryData struct {
+	Status types.Nullable[string] `json:"status,omitempty"`
+	Error  types.Nullable[string] `json:"error,omitempty"`
+	Result types.Nullable[string] `json:"result,omitempty"`
+}
+
 type Task struct {
 	Name          string                  `db:"name" json:"name"`
 	Description   string                  `db:"description" json:"description"`

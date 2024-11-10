@@ -8,8 +8,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/yuudev14-workflow/workflow-service/db/queries"
+	"github.com/yuudev14-workflow/workflow-service/dto"
 	"github.com/yuudev14-workflow/workflow-service/models"
 	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
+	"github.com/yuudev14-workflow/workflow-service/pkg/types"
 )
 
 type TaskRepository interface {
@@ -18,6 +20,7 @@ type TaskRepository interface {
 	DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error
 	CreateTaskHistory(tx *sqlx.Tx, workflowHistoryId string, tasks []models.Tasks) ([]models.TaskHistory, error)
 	UpdateTaskStatus(workflowHistoryId string, taskId string, status string) (*models.TaskHistory, error)
+	UpdateTaskHistory(workflowHistoryId string, taskId string, taskHistory dto.UpdateTaskHistoryData) (*models.TaskHistory, error)
 }
 
 type TaskRepositoryImpl struct {
@@ -103,6 +106,21 @@ func (t *TaskRepositoryImpl) DeleteTasks(tx *sqlx.Tx, taskIds []uuid.UUID) error
 // UpdateTaskStatus implements TaskRepository.
 func (t *TaskRepositoryImpl) UpdateTaskStatus(workflowHistoryId string, taskId string, status string) (*models.TaskHistory, error) {
 	statement := sq.Update("task_history").Set("status", status).Where("workflow_history_id = ? and task_id = ?", workflowHistoryId, taskId).Suffix("RETURNING *")
+	return DbExecAndReturnOne[models.TaskHistory](
+		t.DB,
+		statement,
+	)
+}
+
+// UpdateTaskHistory implements TaskRepository.
+func (t *TaskRepositoryImpl) UpdateTaskHistory(workflowHistoryId string, taskId string, taskHistory dto.UpdateTaskHistoryData) (*models.TaskHistory, error) {
+	data := GenerateKeyValueQuery(map[string]types.Nullable[any]{
+		"status": taskHistory.Status.ToNullableAny(),
+		"error":  taskHistory.Error.ToNullableAny(),
+		"result": taskHistory.Result.ToNullableAny(),
+	})
+
+	statement := sq.Update("task_history").SetMap(data).Where("workflow_history_id = ? and task_id = ?", workflowHistoryId, taskId).Suffix("RETURNING *")
 	return DbExecAndReturnOne[models.TaskHistory](
 		t.DB,
 		statement,
