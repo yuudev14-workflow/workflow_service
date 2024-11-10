@@ -117,8 +117,14 @@ func (t *TaskRepositoryImpl) UpdateTaskHistory(workflowHistoryId string, taskId 
 	data := GenerateKeyValueQuery(map[string]types.Nullable[any]{
 		"status": taskHistory.Status.ToNullableAny(),
 		"error":  taskHistory.Error.ToNullableAny(),
-		"result": taskHistory.Result.ToNullableAny(),
 	})
+
+	jsonData, err := json.Marshal(taskHistory.Result)
+	if err != nil {
+		return nil, err
+	}
+
+	data["result"] = jsonData
 
 	statement := sq.Update("task_history").SetMap(data).Where("workflow_history_id = ? and task_id = ?", workflowHistoryId, taskId).Suffix("RETURNING *")
 	return DbExecAndReturnOne[models.TaskHistory](

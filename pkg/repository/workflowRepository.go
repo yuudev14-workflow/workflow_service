@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"encoding/json"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -80,8 +81,14 @@ func (w *WorkflowRepositoryImpl) UpdateWorkflowHistory(workflowHistoryId string,
 	data := GenerateKeyValueQuery(map[string]types.Nullable[any]{
 		"status": workflowHistory.Status.ToNullableAny(),
 		"error":  workflowHistory.Error.ToNullableAny(),
-		"result": workflowHistory.Result.ToNullableAny(),
 	})
+
+	jsonData, err := json.Marshal(workflowHistory.Result)
+	if err != nil {
+		return nil, err
+	}
+
+	data["result"] = jsonData
 	statement := sq.Update("workflow_history").SetMap(data).Where(sq.Eq{"id": workflowHistoryId}).Suffix("RETURNING *")
 	return DbExecAndReturnOne[models.WorkflowHistory](
 		w.DB,

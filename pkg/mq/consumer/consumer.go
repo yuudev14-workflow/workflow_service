@@ -23,14 +23,14 @@ type TaskStatusPayload struct {
 	TaskId            string                 `json:"task_id"`
 	Status            types.Nullable[string] `json:"status,omitempty"`
 	Error             types.Nullable[string] `json:"error,omitempty"`
-	Result            types.Nullable[string] `json:"result,omitempty"`
+	Result            interface{}            `json:"result,omitempty"`
 }
 
 type WorkflowStatusPayload struct {
 	WorkflowHistoryId string                 `json:"workflow_history_id"`
 	Status            types.Nullable[string] `json:"status,omitempty"`
 	Error             types.Nullable[string] `json:"error,omitempty"`
-	Result            types.Nullable[string] `json:"result,omitempty"`
+	Result            interface{}            `json:"result,omitempty"`
 }
 
 type ConsumeMessage struct {
