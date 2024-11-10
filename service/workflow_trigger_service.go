@@ -1,6 +1,10 @@
 package service
 
 import (
+	"encoding/json"
+
+	"github.com/google/uuid"
+	"github.com/streadway/amqp"
 	"github.com/yuudev14-workflow/workflow-service/db"
 	"github.com/yuudev14-workflow/workflow-service/models"
 	"github.com/yuudev14-workflow/workflow-service/pkg/logging"
@@ -11,6 +15,12 @@ import (
 type WorkflowTriggerService interface {
 	TriggerWorkflow(workflowId string) error
 	PrepareWorkflowMessage(tasks []models.Tasks, edges []repository.Edges) (map[string]models.Tasks, map[string][]string)
+}
+
+type TaskMessage struct {
+	Graph             map[string][]string     `json:"graph"`
+	Tasks             map[string]models.Tasks `json:"tasks"`
+	WorkflowHistoryId uuid.UUID               `json:"workflow_history_id"`
 }
 
 type WorkflowTriggerServiceImpl struct {
@@ -25,6 +35,31 @@ func NewWorflowTriggerService(WorkflowService WorkflowService, TaskService TaskS
 		TaskService:     TaskService,
 		EdgeService:     EdgeService,
 	}
+}
+
+func SendTaskMessage(graph TaskMessage) error {
+	jsonData, jsonErr := json.Marshal(graph)
+
+	if jsonErr != nil {
+		return jsonErr
+	}
+	err := mq.MQChannel.Publish(
+		"",                  // exchange
+		mq.SenderQueue.Name, // routing key
+		false,               // mandatory
+		false,               // immediate
+		amqp.Publishing{
+			DeliveryMode: amqp.Persistent,
+			ContentType:  "text/plain",
+			Body:         []byte(jsonData),
+		})
+	if err != nil {
+		return err
+	}
+
+	logging.Sugar.Infow("successfully pushed the message", "jsonData", string(jsonData))
+	return nil
+
 }
 
 // TriggerWorkflow implements WorkflowTriggerService.
@@ -81,9 +116,10 @@ func (w *WorkflowTriggerServiceImpl) TriggerWorkflow(workflowId string) error {
 
 	}
 
-	mqErr := mq.SendTaskMessage(mq.TaskMessage{
-		Graph: graph,
-		Tasks: tasksMap,
+	mqErr := SendTaskMessage(TaskMessage{
+		Graph:             graph,
+		Tasks:             tasksMap,
+		WorkflowHistoryId: workflowHistory.ID,
 	})
 
 	if mqErr != nil {

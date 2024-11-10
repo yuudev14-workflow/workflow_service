@@ -55,6 +55,8 @@ CREATE TABLE
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
     workflow_id UUID REFERENCES workflows (id) ON DELETE CASCADE,
     status workflow_status NOT NULL DEFAULT 'in_progress',
+    error TEXT,
+    result JSON,
     triggered_at TIMESTAMP NOT NULL DEFAULT NOW()
   );
 
@@ -89,5 +91,7 @@ CREATE TABLE
     workflow_history_id UUID REFERENCES workflow_history (id) ON DELETE CASCADE,
     task_id UUID REFERENCES tasks (id) ON DELETE CASCADE,
     status task_status NOT NULL DEFAULT 'pending',
+    error TEXT,
+    result JSON,
     triggered_at TIMESTAMP NOT NULL DEFAULT NOW()
   );
