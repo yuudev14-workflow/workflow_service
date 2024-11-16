@@ -37,3 +37,17 @@ func BindFormAndValidate[T any](c *gin.Context, form *T) (bool, int, interface{}
 	return ValidateData(valid, form)
 
 }
+
+// binding and validating request body
+func BindQueryAndValidate[T any](c *gin.Context, form *T) (bool, int, interface{}) {
+	err := c.ShouldBindQuery(&form)
+
+	if err != nil {
+		return false, http.StatusBadRequest, err.Error()
+	}
+
+	valid := validation.Validation{}
+
+	return ValidateData(valid, form)
+
+}

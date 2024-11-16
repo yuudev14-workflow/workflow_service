@@ -14,6 +14,7 @@ import (
 )
 
 type WorkflowRepository interface {
+	GetWorkflows(offset int, limit int) ([]models.Workflows, error)
 	GetWorkflowById(id string) (*models.Workflows, error)
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
 	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
@@ -30,6 +31,15 @@ func NewWorkflowRepository(db *sqlx.DB) WorkflowRepository {
 	return &WorkflowRepositoryImpl{
 		DB: db,
 	}
+}
+
+// GetWorkflows implements WorkflowRepository.
+func (w *WorkflowRepositoryImpl) GetWorkflows(offset int, limit int) ([]models.Workflows, error) {
+	statement := sq.Select("*").From("workflows").Offset(uint64(offset)).Limit(uint64(limit))
+	return DbExecAndReturnMany[models.Workflows](
+		w.DB,
+		statement,
+	)
 }
 
 // CreateWorkflowHistory implements WorkflowRepository.

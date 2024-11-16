@@ -37,6 +37,32 @@ func NewWorkflowController(
 	}
 }
 
+func (w *WorkflowController) GetWorkflows(c *gin.Context) {
+	var body dto.WorkflowFilter
+	response := rest.Response{C: c}
+
+	check, code, validErr := rest.BindQueryAndValidate(c, &body)
+
+	if !check {
+		logging.Sugar.Errorf(fmt.Sprintf("%v", validErr))
+		response.ResponseError(code, validErr)
+		return
+	}
+
+	logging.Sugar.Debugf("queries: %v", body)
+
+	logging.Sugar.Debug("getting worflows")
+	workflows, err := w.WorkflowService.GetWorkflows(body.Offset, body.Limit)
+
+	if err != nil {
+		response.ResponseError(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	response.ResponseSuccess(workflows)
+
+}
+
 func (w *WorkflowController) CreateWorkflow(c *gin.Context) {
 	var body dto.WorkflowPayload
 	response := rest.Response{C: c}

@@ -4,6 +4,11 @@ import (
 	"github.com/yuudev14-workflow/workflow-service/pkg/types"
 )
 
+type WorkflowFilter struct {
+	Offset int `form:"offset,default=0"`
+	Limit  int `form:"limit,default=50"`
+}
+
 type UpdateWorkflowData struct {
 	Name        types.Nullable[string] `json:"name,omitempty"`
 	Description types.Nullable[string] `json:"description,omitempty"`
