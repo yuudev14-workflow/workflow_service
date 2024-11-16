@@ -7,6 +7,9 @@ import (
 	"github.com/yuudev14-workflow/workflow-service/pkg/types"
 )
 
+type Position struct {
+}
+
 type Tasks struct {
 	ID            uuid.UUID      `db:"id" json:"id"`
 	WorkflowID    string         `db:"workflow_id" json:"workflow_id"`
@@ -19,4 +22,7 @@ type Tasks struct {
 	Parameters    types.JsonType `db:"parameters" json:"parameters"`
 	CreatedAt     time.Time      `db:"created_at" json:"created_at"`
 	UpdatedAt     time.Time      `db:"updated_at" json:"updated_at"`
+	Position      Position       `db:"position" json:"position"`
+	X             int64          `db:"x" json:"x"`
+	Y             int64          `db:"y" json:"y"`
 }

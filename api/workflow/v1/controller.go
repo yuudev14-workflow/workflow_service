@@ -183,6 +183,18 @@ func (w *WorkflowController) UpsertTasks(
 			Config:        node.Config.Value,
 			ConnectorName: node.ConnectorName,
 			Operation:     node.Operation,
+			X: func() int64 {
+				if node.X != nil {
+					return *node.X
+				}
+				return 0
+			}(),
+			Y: func() int64 {
+				if node.Y != nil {
+					return *node.Y
+				}
+				return 0
+			}(),
 		})
 	}
 

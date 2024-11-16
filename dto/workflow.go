@@ -27,12 +27,14 @@ type UpdateTaskHistoryData struct {
 }
 
 type Task struct {
-	Name          string                  `db:"name" json:"name"`
-	Description   string                  `db:"description" json:"description"`
-	Parameters    *map[string]interface{} `db:"parameters" json:"parameters,omitempty"`
-	ConnectorName string                  `db:"connector_name" json:"connector_name"`
-	Operation     string                  `db:"operation" json:"operation"`
+	Name          string                  `json:"name"`
+	Description   string                  `json:"description"`
+	Parameters    *map[string]interface{} `json:"parameters,omitempty"`
+	ConnectorName string                  `json:"connector_name"`
+	Operation     string                  `json:"operation"`
 	Config        types.Nullable[string]  `json:"config,omitempty"`
+	X             *int64                  `json:"x"`
+	Y             *int64                  `json:"y"`
 }
 
 type UpdateWorkflowtasks struct {

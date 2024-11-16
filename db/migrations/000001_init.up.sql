@@ -56,7 +56,7 @@ CREATE TABLE
     workflow_id UUID REFERENCES workflows (id) ON DELETE CASCADE,
     status workflow_status NOT NULL DEFAULT 'in_progress',
     error TEXT,
-    result JSON,
+    result JSONB,
     triggered_at TIMESTAMP NOT NULL DEFAULT NOW()
   );
 
@@ -66,8 +66,10 @@ CREATE TABLE
     workflow_id UUID NOT NULL REFERENCES workflows (id) ON DELETE CASCADE,
     name VARCHAR(50),
     description TEXT,
-    parameters JSON,
+    parameters JSONB,
     config VARCHAR(50),
+    x int,
+    y int,
     connector_name VARCHAR(100) NOT NULL,
     operation VARCHAR(100) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -93,6 +95,6 @@ CREATE TABLE
     task_id UUID REFERENCES tasks (id) ON DELETE CASCADE,
     status task_status NOT NULL DEFAULT 'pending',
     error TEXT,
-    result JSON,
+    result JSONB,
     triggered_at TIMESTAMP NOT NULL DEFAULT NOW()
   );
