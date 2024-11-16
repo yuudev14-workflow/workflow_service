@@ -6,6 +6,7 @@ import (
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/google/uuid"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/yuudev14-workflow/workflow-service/db/queries"
@@ -14,9 +15,21 @@ import (
 	"github.com/yuudev14-workflow/workflow-service/pkg/types"
 )
 
+type WorkflowsGraph struct {
+	ID          uuid.UUID       `db:"id" json:"id"`
+	Name        string          `db:"name" json:"name"`
+	Description *string         `db:"description" json:"description"`
+	TriggerType string          `json:"trigger_type" db:"trigger_type"`
+	CreatedAt   time.Time       `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time       `db:"updated_at" json:"updated_at"`
+	Tasks       json.RawMessage `db:"tasks" json:"tasks"`
+	Edges       json.RawMessage `db:"edges" json:"edges"`
+}
+
 type WorkflowRepository interface {
 	GetWorkflows(offset int, limit int, filter dto.WorkflowFilter) ([]models.Workflows, error)
 	GetWorkflowById(id string) (*models.Workflows, error)
+	GetWorkflowGraphById(id string) (*WorkflowsGraph, error)
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
 	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
 	CreateWorkflowHistory(tx *sqlx.Tx, id string) (*models.WorkflowHistory, error)
@@ -32,6 +45,32 @@ func NewWorkflowRepository(db *sqlx.DB) WorkflowRepository {
 	return &WorkflowRepositoryImpl{
 		DB: db,
 	}
+}
+
+// GetWorkflowById implements WorkflowRepository.
+func (w *WorkflowRepositoryImpl) GetWorkflowById(id string) (*models.Workflows, error) {
+	statement := sq.Select("*").From("workflows").Where("id = ?", id)
+	return DbExecAndReturnOne[models.Workflows](
+		w.DB,
+		statement,
+	)
+}
+
+// GetWorkflowById implements WorkflowRepository.
+func (w *WorkflowRepositoryImpl) GetWorkflowGraphById(id string) (*WorkflowsGraph, error) {
+	statement := sq.Select(`
+	workflows.*,
+	(SELECT JSON_AGG(tasks.*)
+        FROM tasks
+        WHERE tasks.workflow_id = workflows.id) AS tasks,
+	(SELECT JSON_AGG(edges.*)
+        FROM edges
+        WHERE edges.workflow_id = workflows.id) AS edges
+	`).From("workflows").Where("id = ?", id)
+	return DbExecAndReturnOne[WorkflowsGraph](
+		w.DB,
+		statement,
+	)
 }
 
 // GetWorkflows implements WorkflowRepository.
@@ -54,15 +93,6 @@ func (w *WorkflowRepositoryImpl) CreateWorkflowHistory(tx *sqlx.Tx, id string) (
 	statement := sq.Insert("workflow_history").Columns("workflow_id", "triggered_at").Values(id, time.Now()).Suffix("RETURNING *")
 	return DbExecAndReturnOne[models.WorkflowHistory](
 		tx,
-		statement,
-	)
-}
-
-// GetWorkflowById implements WorkflowRepository.
-func (w *WorkflowRepositoryImpl) GetWorkflowById(id string) (*models.Workflows, error) {
-	statement := sq.Select("*").From("workflows").Where("id = ?", id)
-	return DbExecAndReturnOne[models.Workflows](
-		w.DB,
 		statement,
 	)
 }

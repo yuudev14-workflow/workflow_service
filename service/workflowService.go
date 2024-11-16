@@ -12,6 +12,7 @@ import (
 type WorkflowService interface {
 	GetWorkflows(offset int, limit int, filter dto.WorkflowFilter) ([]models.Workflows, error)
 	GetWorkflowById(id string) (*models.Workflows, error)
+	GetWorkflowGraphById(id string) (*repository.WorkflowsGraph, error)
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
 	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
 	CreateWorkflowHistory(tx *sqlx.Tx, id string) (*models.WorkflowHistory, error)
@@ -47,7 +48,20 @@ func (w *WorkflowServiceImpl) GetWorkflowById(id string) (*models.Workflows, err
 	}
 
 	if workflow == nil {
-		return nil, fmt.Errorf("user is not found")
+		return nil, fmt.Errorf("workflow is not found")
+	}
+	return workflow, nil
+}
+
+// GetWorkflowById implements WorkflowService.
+func (w *WorkflowServiceImpl) GetWorkflowGraphById(id string) (*repository.WorkflowsGraph, error) {
+	workflow, workflowErr := w.WorkflowRepository.GetWorkflowGraphById(id)
+	if workflowErr != nil {
+		return nil, workflowErr
+	}
+
+	if workflow == nil {
+		return nil, fmt.Errorf("workflow is not found")
 	}
 	return workflow, nil
 }

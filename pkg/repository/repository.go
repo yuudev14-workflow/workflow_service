@@ -12,21 +12,6 @@ import (
 	"github.com/yuudev14-workflow/workflow-service/pkg/types"
 )
 
-// // CreateWorkflowHistory implements WorkflowRepository.
-// func (w *WorkflowRepositoryImpl) CreateWorkflowHistory(id string) (*models.WorkflowHistory, error) {
-// 	sql, args, err := sq.Insert("workflow_history").Columns("workflow_id", "triggered_at").Values(id, time.Now()).Suffix("RETURNING *").ToSql()
-// 	logging.Sugar.Debugw("GetWorkflowById statement", "sql", sql, "args", args)
-// 	if err != nil {
-// 		logging.Sugar.Error("Error in GetWorkflowById", err)
-// 		return nil, err
-// 	}
-// 	return DbExecAndReturnOne[models.WorkflowHistory](
-// 		w.DB,
-// 		sql,
-// 		args...,
-// 	)
-// }
-
 func DbExecAndReturnOne[T any](execer sqlx.ExtContext, sqlizer sq.Sqlizer) (*T, error) {
 	var dest T
 	query, args, err := sqlizer.ToSql()

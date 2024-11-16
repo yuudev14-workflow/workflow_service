@@ -73,6 +73,45 @@ func (w *WorkflowController) GetWorkflows(c *gin.Context) {
 
 }
 
+func (w *WorkflowController) GetWorkflowGraphById(c *gin.Context) {
+	response := rest.Response{C: c}
+	workflowId := c.Param("workflow_id")
+
+	workflow, workflowErr := w.WorkflowService.GetWorkflowGraphById(workflowId)
+
+	if workflowErr != nil {
+		logging.Sugar.Error(workflowErr)
+		response.ResponseError(http.StatusInternalServerError, workflowErr.Error())
+		return
+	}
+
+	response.ResponseSuccess(workflow)
+}
+
+func (w *WorkflowController) GetWorkflowById(c *gin.Context) {
+	response := rest.Response{C: c}
+	workflowId := c.Param("workflow_id")
+
+	_, workflowErr := w.WorkflowService.GetWorkflowById(workflowId)
+
+	if workflowErr != nil {
+		logging.Sugar.Error(workflowErr)
+		response.ResponseError(http.StatusInternalServerError, workflowErr.Error())
+		return
+	}
+
+	newTasks, newTaskErr := w.TaskService.GetTasksByWorkflowId(workflowId)
+	if newTaskErr != nil {
+		logging.Sugar.Errorf("error: ", newTaskErr)
+		response.ResponseError(http.StatusBadRequest, newTaskErr.Error())
+		return
+	}
+
+	response.ResponseSuccess(gin.H{
+		"tasks": newTasks,
+	})
+}
+
 func (w *WorkflowController) CreateWorkflow(c *gin.Context) {
 	var body dto.WorkflowPayload
 	response := rest.Response{C: c}
@@ -176,8 +215,9 @@ func (w *WorkflowController) InsertEdges(
 			destinationID, destinationIdOk := tasksMap[val]
 			if sourceIdOk && destinationIdOk {
 				edgeToInsert = append(edgeToInsert, models.Edges{
-					SourceID:      sourceId.String(),
-					DestinationID: destinationID.String(),
+					SourceID:      sourceId,
+					DestinationID: destinationID,
+					WorkflowID:    workflowUUID,
 				})
 			}
 		}
