@@ -76,6 +76,11 @@ func (t *TaskRepositoryImpl) UpsertTasks(tx *sqlx.Tx, workflowId uuid.UUID, task
 		ON CONFLICT (workflow_id, name) DO UPDATE
    	SET description = EXCLUDED.description,
        parameters = EXCLUDED.parameters,
+			 config = EXCLUDED.config,
+			 connector_name = EXCLUDED.connector_name,
+			 operation = EXCLUDED.operation,
+			 x = EXCLUDED.x,
+			 y = EXCLUDED.y,
        updated_at = NOW()
 		RETURNING *`)
 
