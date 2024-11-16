@@ -5,8 +5,7 @@ import (
 )
 
 type WorkflowFilter struct {
-	Offset int `form:"offset,default=0"`
-	Limit  int `form:"limit,default=50"`
+	Name *string `form:"name"`
 }
 
 type UpdateWorkflowData struct {

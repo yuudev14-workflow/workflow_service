@@ -10,7 +10,7 @@ import (
 )
 
 type WorkflowService interface {
-	GetWorkflows(offset int, limit int) ([]models.Workflows, error)
+	GetWorkflows(offset int, limit int, filter dto.WorkflowFilter) ([]models.Workflows, error)
 	GetWorkflowById(id string) (*models.Workflows, error)
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
 	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
@@ -30,8 +30,8 @@ func NewWorkflowService(WorkflowRepository repository.WorkflowRepository) Workfl
 }
 
 // GetWorkflows implements WorkflowService.
-func (w *WorkflowServiceImpl) GetWorkflows(offset int, limit int) ([]models.Workflows, error) {
-	return w.WorkflowRepository.GetWorkflows(offset, limit)
+func (w *WorkflowServiceImpl) GetWorkflows(offset int, limit int, filter dto.WorkflowFilter) ([]models.Workflows, error) {
+	return w.WorkflowRepository.GetWorkflows(offset, limit, filter)
 }
 
 // CreateWorkflowHistory implements WorkflowService.

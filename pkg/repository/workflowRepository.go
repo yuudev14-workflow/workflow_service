@@ -2,6 +2,7 @@ package repository
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -14,7 +15,7 @@ import (
 )
 
 type WorkflowRepository interface {
-	GetWorkflows(offset int, limit int) ([]models.Workflows, error)
+	GetWorkflows(offset int, limit int, filter dto.WorkflowFilter) ([]models.Workflows, error)
 	GetWorkflowById(id string) (*models.Workflows, error)
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
 	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
@@ -34,8 +35,14 @@ func NewWorkflowRepository(db *sqlx.DB) WorkflowRepository {
 }
 
 // GetWorkflows implements WorkflowRepository.
-func (w *WorkflowRepositoryImpl) GetWorkflows(offset int, limit int) ([]models.Workflows, error) {
+func (w *WorkflowRepositoryImpl) GetWorkflows(offset int, limit int, filter dto.WorkflowFilter) ([]models.Workflows, error) {
+
 	statement := sq.Select("*").From("workflows").Offset(uint64(offset)).Limit(uint64(limit))
+
+	if filter.Name != nil {
+		statement = statement.Where("name ILIKE ?", fmt.Sprint("%", filter.Name, "%"))
+
+	}
 	return DbExecAndReturnMany[models.Workflows](
 		w.DB,
 		statement,

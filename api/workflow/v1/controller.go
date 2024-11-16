@@ -38,21 +38,31 @@ func NewWorkflowController(
 }
 
 func (w *WorkflowController) GetWorkflows(c *gin.Context) {
-	var body dto.WorkflowFilter
+	var query dto.FilterQuery
+	var filter dto.WorkflowFilter
 	response := rest.Response{C: c}
 
-	check, code, validErr := rest.BindQueryAndValidate(c, &body)
+	checkQuery, codeQuery, validQueryErr := rest.BindQueryAndValidate(c, &query)
 
-	if !check {
-		logging.Sugar.Errorf(fmt.Sprintf("%v", validErr))
-		response.ResponseError(code, validErr)
+	if !checkQuery {
+		logging.Sugar.Errorf(fmt.Sprintf("%v", validQueryErr))
+		response.ResponseError(codeQuery, validQueryErr)
 		return
 	}
 
-	logging.Sugar.Debugf("queries: %v", body)
+	checkFilter, codeFilter, validFilterErr := rest.BindQueryAndValidate(c, &filter)
+
+	if !checkFilter {
+		logging.Sugar.Errorf(fmt.Sprintf("%v", validFilterErr))
+		response.ResponseError(codeFilter, validFilterErr)
+		return
+	}
+
+	logging.Sugar.Debugf("queries: %v", query)
+	logging.Sugar.Debugf("filter: %v", filter)
 
 	logging.Sugar.Debug("getting worflows")
-	workflows, err := w.WorkflowService.GetWorkflows(body.Offset, body.Limit)
+	workflows, err := w.WorkflowService.GetWorkflows(query.Offset, query.Limit, filter)
 
 	if err != nil {
 		response.ResponseError(http.StatusBadRequest, err.Error())
