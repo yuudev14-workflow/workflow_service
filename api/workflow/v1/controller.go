@@ -69,7 +69,17 @@ func (w *WorkflowController) GetWorkflows(c *gin.Context) {
 		return
 	}
 
-	response.ResponseSuccess(workflows)
+	workflowsCount, workflowsCountErr := w.WorkflowService.GetWorkflowsCount(filter)
+
+	if workflowsCountErr != nil {
+		response.ResponseError(http.StatusBadRequest, workflowsCountErr.Error())
+		return
+	}
+
+	response.ResponseSuccess(gin.H{
+		"entries": workflows,
+		"total":   workflowsCount,
+	})
 
 }
 

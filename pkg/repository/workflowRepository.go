@@ -28,6 +28,7 @@ type WorkflowsGraph struct {
 
 type WorkflowRepository interface {
 	GetWorkflows(offset int, limit int, filter dto.WorkflowFilter) ([]models.Workflows, error)
+	GetWorkflowsCount(filter dto.WorkflowFilter) (int, error)
 	GetWorkflowById(id string) (*models.Workflows, error)
 	GetWorkflowGraphById(id string) (*WorkflowsGraph, error)
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
@@ -45,6 +46,35 @@ func NewWorkflowRepository(db *sqlx.DB) WorkflowRepository {
 	return &WorkflowRepositoryImpl{
 		DB: db,
 	}
+}
+
+// GetWorkflows implements WorkflowRepository.
+func (w *WorkflowRepositoryImpl) GetWorkflows(offset int, limit int, filter dto.WorkflowFilter) ([]models.Workflows, error) {
+
+	statement := sq.Select("*").From("workflows").Offset(uint64(offset)).Limit(uint64(limit))
+
+	if filter.Name != nil {
+		statement = statement.Where("name ILIKE ?", fmt.Sprint("%", filter.Name, "%"))
+
+	}
+	return DbExecAndReturnMany[models.Workflows](
+		w.DB,
+		statement,
+	)
+}
+
+// GetWorkflowsCount implements WorkflowRepository.
+func (w *WorkflowRepositoryImpl) GetWorkflowsCount(filter dto.WorkflowFilter) (int, error) {
+	statement := sq.Select("count(*)").From("workflows")
+
+	if filter.Name != nil {
+		statement = statement.Where("name ILIKE ?", fmt.Sprint("%", filter.Name, "%"))
+
+	}
+	return DbExecAndReturnCount(
+		w.DB,
+		statement,
+	)
 }
 
 // GetWorkflowById implements WorkflowRepository.
@@ -68,21 +98,6 @@ func (w *WorkflowRepositoryImpl) GetWorkflowGraphById(id string) (*WorkflowsGrap
         WHERE edges.workflow_id = workflows.id) AS edges
 	`).From("workflows").Where("id = ?", id)
 	return DbExecAndReturnOne[WorkflowsGraph](
-		w.DB,
-		statement,
-	)
-}
-
-// GetWorkflows implements WorkflowRepository.
-func (w *WorkflowRepositoryImpl) GetWorkflows(offset int, limit int, filter dto.WorkflowFilter) ([]models.Workflows, error) {
-
-	statement := sq.Select("*").From("workflows").Offset(uint64(offset)).Limit(uint64(limit))
-
-	if filter.Name != nil {
-		statement = statement.Where("name ILIKE ?", fmt.Sprint("%", filter.Name, "%"))
-
-	}
-	return DbExecAndReturnMany[models.Workflows](
 		w.DB,
 		statement,
 	)

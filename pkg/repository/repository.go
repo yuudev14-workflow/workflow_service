@@ -12,6 +12,27 @@ import (
 	"github.com/yuudev14-workflow/workflow-service/pkg/types"
 )
 
+func DbExecAndReturnCount(execer sqlx.ExtContext, sqlizer sq.Sqlizer) (int, error) {
+	var dest int
+	query, args, err := sqlizer.ToSql()
+	logging.Sugar.Debugw("statement", "sql", query, "args", args)
+	if err != nil {
+		logging.Sugar.Error(err)
+		return 0, err
+	}
+	query = execer.Rebind(query)
+	logging.Sugar.Debug(query, args)
+	sqlErr := sqlx.GetContext(context.Background(), execer, &dest, query, args...)
+	if sqlErr != nil {
+		logging.Sugar.Warn(sqlErr)
+		if sqlErr == sql.ErrNoRows {
+			return 0, nil
+		}
+		return 0, sqlErr
+	}
+	return dest, nil
+}
+
 func DbExecAndReturnOne[T any](execer sqlx.ExtContext, sqlizer sq.Sqlizer) (*T, error) {
 	var dest T
 	query, args, err := sqlizer.ToSql()
