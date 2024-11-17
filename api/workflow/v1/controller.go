@@ -216,10 +216,15 @@ func (w *WorkflowController) InsertEdges(
 	var edgeToInsert []models.Edges
 	tasksMap := make(map[string]uuid.UUID)
 
+	// initialize data to insert. in payload we have the name of the tasks but we need
+	// to save the id instead of the name that why we need to
 	// create a taskmap with name and uuid of the task to easily get the uuid from the edges
 	for _, task := range tasks {
 		tasksMap[task.Name] = task.ID
 	}
+
+	logging.Sugar.Debugf("tasksMap: %v", tasksMap)
+	logging.Sugar.Debugf("edges: %v", edges)
 
 	for key, values := range edges {
 		for _, val := range values {
@@ -231,6 +236,8 @@ func (w *WorkflowController) InsertEdges(
 					DestinationID: destinationID,
 					WorkflowID:    workflowUUID,
 				})
+			} else {
+				logging.Sugar.Debugf("edges data that are not added: %v %v", key, val)
 			}
 		}
 	}
@@ -377,6 +384,8 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 		response.ResponseError(http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	// delete the edges first
 	deleteEdgesErr := w.DeleteEdges(tx, workflowUUID, body.Edges)
 	if deleteEdgesErr != nil {
 		logging.Sugar.Error(deleteEdgesErr)
@@ -384,6 +393,8 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 		response.ResponseError(http.StatusBadRequest, deleteEdgesErr.Error())
 		return
 	}
+
+	// upsert the tasks. insert if doesnt exist, update when exist
 	insertedTasks, upsertTasksErr := w.UpsertTasks(tx, workflowUUID, body.Nodes)
 	if upsertTasksErr != nil {
 		logging.Sugar.Error(upsertTasksErr)
@@ -391,6 +402,8 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 		response.ResponseError(http.StatusBadRequest, upsertTasksErr.Error())
 		return
 	}
+
+	// delete the tasks the we dont need anymore
 	deleteTaskError := w.DeleteTasks(tx, workflowUUID, body.Nodes)
 	if deleteTaskError != nil {
 		logging.Sugar.Error(deleteTaskError)
@@ -398,6 +411,8 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 		response.ResponseError(http.StatusInternalServerError, deleteTaskError.Error())
 		return
 	}
+
+	// insert the new edges
 	insertEdgeError := w.InsertEdges(tx, workflowUUID, body.Edges, insertedTasks)
 	if insertEdgeError != nil {
 		logging.Sugar.Error(insertEdgeError)
