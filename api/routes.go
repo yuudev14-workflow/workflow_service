@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -19,11 +20,22 @@ func InitRouter() *gin.Engine {
 
 	app := gin.Default()
 
+	config := cors.Config{
+		//AllowOrigins:    []string{"http://localhost:3000", "http://127.0.0.1:3000"},
+		AllowMethods:     []string{"*"},
+		AllowHeaders:     []string{"*"},
+		AllowAllOrigins:  true,
+		AllowCredentials: true,
+	}
+
+	// Use CORS middleware
+	app.Use(cors.New(config))
+
 	docs.SwaggerInfo.BasePath = "./"
 
-	api_group := app.Group("/api")
+	apiGroup := app.Group("/api")
 
-	StartApi(api_group)
+	StartApi(apiGroup)
 
 	app.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
