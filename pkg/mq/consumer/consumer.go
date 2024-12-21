@@ -3,6 +3,7 @@ package consumer
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/yuudev14-workflow/workflow-service/db"
 	"github.com/yuudev14-workflow/workflow-service/dto"
@@ -95,11 +96,10 @@ func (c *ConsumeMessage) PrepareMessage(data MessageBody) {
 }
 
 func Listen() {
-
 	msgs, err := mq.MQChannel.Consume(
 		mq.ReceiverQueue.Name, // queue
 		"",                    // consumer
-		true,                  // auto-acknowledge
+		false,                 // auto-acknowledge (changed to false for manual ack)
 		false,                 // exclusive
 		false,                 // no-local
 		false,                 // no-wait
@@ -110,26 +110,38 @@ func Listen() {
 		panic("error in consuming a queue")
 	}
 
-	var forever chan struct{}
+	// Number of worker goroutines
+	workerCount := 10
 
-	go func() {
-		workflowRepository := repository.NewWorkflowRepository(db.DB)
-		taskRepository := repository.NewTaskRepositoryImpl(db.DB)
-		workflowService := service.NewWorkflowService(workflowRepository)
-		taskService := service.NewTaskServiceImpl(taskRepository, workflowService)
-		consumeMessageService := NewConsumeMessage(workflowService, taskService)
-		for d := range msgs {
-			var message MessageBody
+	// Use a WaitGroup to manage goroutines
+	var wg sync.WaitGroup
 
-			err := json.Unmarshal(d.Body, &message)
-			if err != nil {
-				logging.Sugar.Warnf("Error decoding JSON: %v", err)
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			workflowRepository := repository.NewWorkflowRepository(db.DB)
+			taskRepository := repository.NewTaskRepositoryImpl(db.DB)
+			workflowService := service.NewWorkflowService(workflowRepository)
+			taskService := service.NewTaskServiceImpl(taskRepository, workflowService)
+			consumeMessageService := NewConsumeMessage(workflowService, taskService)
+
+			for d := range msgs {
+				var message MessageBody
+
+				err := json.Unmarshal(d.Body, &message)
+				if err != nil {
+					logging.Sugar.Warnf("Error decoding JSON: %v", err)
+					d.Nack(false, true) // Negative acknowledgement, requeue the message
+					continue
+				}
+				logging.Sugar.Infof("Received a message: %s", d.Body)
+				consumeMessageService.PrepareMessage(message)
+				d.Ack(false) // Acknowledge the message after processing
 			}
-			logging.Sugar.Infof("Received a message: %s", d.Body)
-			consumeMessageService.PrepareMessage(message)
-		}
-	}()
+		}()
+	}
 
-	logging.Sugar.Info("Listening to message queue")
-	<-forever
+	logging.Sugar.Info("Listening to message queue with ", workerCount, "workers")
+	wg.Wait() // Wait for all goroutines to finish
 }
