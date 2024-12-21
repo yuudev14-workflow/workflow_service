@@ -125,8 +125,9 @@ func (w *WorkflowRepositoryImpl) CreateWorkflow(workflow dto.WorkflowPayload) (*
 func (w *WorkflowRepositoryImpl) UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error) {
 
 	data := GenerateKeyValueQuery(map[string]types.Nullable[any]{
-		"name":        workflow.Name.ToNullableAny(),
-		"description": workflow.Description.ToNullableAny(),
+		"name":         workflow.Name.ToNullableAny(),
+		"description":  workflow.Description.ToNullableAny(),
+		"trigger_type": workflow.TriggerType.ToNullableAny(),
 	})
 
 	statement := sq.Update("workflows").SetMap(data).Where(sq.Eq{"id": id}).Suffix("RETURNING *")

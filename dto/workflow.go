@@ -11,6 +11,7 @@ type WorkflowFilter struct {
 type UpdateWorkflowData struct {
 	Name        types.Nullable[string] `json:"name,omitempty"`
 	Description types.Nullable[string] `json:"description,omitempty"`
+	TriggerType types.Nullable[string] `json:"trigger_type,omitempty"`
 }
 
 type UpdateWorkflowHistoryData struct {
