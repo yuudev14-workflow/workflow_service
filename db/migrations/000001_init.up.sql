@@ -34,7 +34,7 @@ CREATE TABLE
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
     name VARCHAR(50),
     description TEXT,
-    trigger_type VARCHAR(20) NOT NULL,
+    trigger_type VARCHAR(20),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
   );
