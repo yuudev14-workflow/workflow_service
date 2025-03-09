@@ -16,6 +16,7 @@ type WorkflowService interface {
 	GetWorkflowGraphById(id string) (*repository.WorkflowsGraph, error)
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
 	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
+	UpdateWorkflowTx(tx *sqlx.Tx, id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
 	CreateWorkflowHistory(tx *sqlx.Tx, id string) (*models.WorkflowHistory, error)
 	UpdateWorkflowHistory(workflowHistoryId string, workflowHistory dto.UpdateWorkflowHistoryData) (*models.WorkflowHistory, error)
 	UpdateWorkflowHistoryStatus(workflowHistoryId string, status string) (*models.WorkflowHistory, error)
@@ -80,6 +81,11 @@ func (w *WorkflowServiceImpl) CreateWorkflow(workflow dto.WorkflowPayload) (*mod
 // updateWorkflow implements WorkflowRepository.
 func (w *WorkflowServiceImpl) UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error) {
 	return w.WorkflowRepository.UpdateWorkflow(id, workflow)
+}
+
+// updateWorkflowTx implements WorkflowRepository.
+func (w *WorkflowServiceImpl) UpdateWorkflowTx(tx *sqlx.Tx, id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error) {
+	return w.WorkflowRepository.UpdateWorkflowTx(tx, id, workflow)
 }
 
 // UpdateWorkflowHistoryStatus implements WorkflowRepository.

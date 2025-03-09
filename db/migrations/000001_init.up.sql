@@ -28,13 +28,22 @@ CREATE TABLE IF NOT EXISTS
     first_name TEXT,
     last_name TEXT
   );
+
+CREATE TABLE
+  IF NOT EXISTS workflow_triggers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
+    name VARCHAR(50),
+    description TEXT
+  );
+
+INSERT INTO workflow_triggers (name) VALUES ('manual'), ('webhook');
   
 CREATE TABLE
   IF NOT EXISTS workflows (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
-    name VARCHAR(50),
+    name VARCHAR(200),
     description TEXT,
-    trigger_type VARCHAR(20),
+    trigger_type UUID REFERENCES workflow_triggers (id) NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
   );

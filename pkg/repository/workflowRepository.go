@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/yuudev14-workflow/workflow-service/db/queries"
 	"github.com/yuudev14-workflow/workflow-service/dto"
 	"github.com/yuudev14-workflow/workflow-service/models"
 	"github.com/yuudev14-workflow/workflow-service/pkg/types"
@@ -33,6 +32,7 @@ type WorkflowRepository interface {
 	GetWorkflowGraphById(id string) (*WorkflowsGraph, error)
 	CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error)
 	UpdateWorkflow(id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
+	UpdateWorkflowTx(tx *sqlx.Tx, id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error)
 	CreateWorkflowHistory(tx *sqlx.Tx, id string) (*models.WorkflowHistory, error)
 	UpdateWorkflowHistoryStatus(workflow_history_id string, status string) (*models.WorkflowHistory, error)
 	UpdateWorkflowHistory(workflowHistoryId string, workflowHistory dto.UpdateWorkflowHistoryData) (*models.WorkflowHistory, error)
@@ -114,10 +114,10 @@ func (w *WorkflowRepositoryImpl) CreateWorkflowHistory(tx *sqlx.Tx, id string) (
 
 // function for creating a workflow:
 func (w *WorkflowRepositoryImpl) CreateWorkflow(workflow dto.WorkflowPayload) (*models.Workflows, error) {
-
-	return DbExecAndReturnOneOld[models.Workflows](
+	statement := sq.Insert("workflows").Columns("name", "description", "trigger_type").Values(workflow.Name, workflow.Description, workflow.TriggerType).Suffix("RETURNING *")
+	return DbExecAndReturnOne[models.Workflows](
 		w.DB,
-		queries.INSERT_WORKFLOW, workflow.Name, workflow.Description,
+		statement,
 	)
 }
 
@@ -134,6 +134,23 @@ func (w *WorkflowRepositoryImpl) UpdateWorkflow(id string, workflow dto.UpdateWo
 
 	return DbExecAndReturnOne[models.Workflows](
 		w.DB,
+		statement,
+	)
+}
+
+// updateWorkflow implements WorkflowRepository.
+func (w *WorkflowRepositoryImpl) UpdateWorkflowTx(tx *sqlx.Tx, id string, workflow dto.UpdateWorkflowData) (*models.Workflows, error) {
+
+	data := GenerateKeyValueQuery(map[string]types.Nullable[any]{
+		"name":         workflow.Name.ToNullableAny(),
+		"description":  workflow.Description.ToNullableAny(),
+		"trigger_type": workflow.TriggerType.ToNullableAny(),
+	})
+
+	statement := sq.Update("workflows").SetMap(data).Where(sq.Eq{"id": id}).Suffix("RETURNING *")
+
+	return DbExecAndReturnOne[models.Workflows](
+		tx,
 		statement,
 	)
 }

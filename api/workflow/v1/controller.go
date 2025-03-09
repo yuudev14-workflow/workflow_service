@@ -370,6 +370,17 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 		return
 	}
 
+	if body.Task != nil {
+		_, errTask := w.WorkflowService.UpdateWorkflowTx(tx, workflowId, *body.Task)
+
+		logging.Sugar.Debug("updated workflow...")
+
+		if errTask != nil {
+			response.ResponseError(http.StatusBadRequest, errTask.Error())
+			return
+		}
+	}
+
 	// validate if start node in body payload
 	payloadErr := validateWorkflowTaskPayload(body)
 
@@ -431,18 +442,15 @@ func (w *WorkflowController) UpdateWorkflowTasks(c *gin.Context) {
 		return
 	}
 
-	newTasks, newTaskErr := w.TaskService.GetTasksByWorkflowId(workflowId)
-	if newTaskErr != nil {
-		logging.Sugar.Errorf("error: ", newTaskErr)
-		response.ResponseError(http.StatusBadRequest, newTaskErr.Error())
+	workflow, workflowErr := w.WorkflowService.GetWorkflowGraphById(workflowId)
+
+	if workflowErr != nil {
+		logging.Sugar.Error(workflowErr)
+		response.ResponseError(http.StatusInternalServerError, workflowErr.Error())
 		return
 	}
-	newEdges, _ := w.EdgeService.GetEdgesByWorkflowId(workflowId)
 
-	response.Response(http.StatusAccepted, gin.H{
-		"tasks": newTasks,
-		"edges": newEdges,
-	})
+	response.ResponseSuccess(workflow)
 }
 
 func (w *WorkflowController) GetTasksByWorkflowId(c *gin.Context) {
