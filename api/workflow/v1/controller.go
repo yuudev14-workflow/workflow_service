@@ -98,7 +98,7 @@ func (w *WorkflowController) GetWorkflowGraphById(c *gin.Context) {
 	response.ResponseSuccess(workflow)
 }
 
-func (w *WorkflowController) GetWorkflowTriggers(c *gin.Context) {
+func (w *WorkflowController) GetWorkflowTriggerTypes(c *gin.Context) {
 	response := rest.Response{C: c}
 	workflowTriggers, workflowErr := w.WorkflowService.GetWorkflowTriggers()
 
