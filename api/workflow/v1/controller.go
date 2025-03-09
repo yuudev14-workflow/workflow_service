@@ -98,6 +98,19 @@ func (w *WorkflowController) GetWorkflowGraphById(c *gin.Context) {
 	response.ResponseSuccess(workflow)
 }
 
+func (w *WorkflowController) GetWorkflowTriggers(c *gin.Context) {
+	response := rest.Response{C: c}
+	workflowTriggers, workflowErr := w.WorkflowService.GetWorkflowTriggers()
+
+	if workflowErr != nil {
+		logging.Sugar.Error(workflowErr)
+		response.ResponseError(http.StatusInternalServerError, workflowErr.Error())
+		return
+	}
+
+	response.ResponseSuccess(workflowTriggers)
+}
+
 func (w *WorkflowController) GetWorkflowById(c *gin.Context) {
 	response := rest.Response{C: c}
 	workflowId := c.Param("workflow_id")

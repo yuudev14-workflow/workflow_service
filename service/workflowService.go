@@ -11,6 +11,7 @@ import (
 
 type WorkflowService interface {
 	GetWorkflows(offset int, limit int, filter dto.WorkflowFilter) ([]models.Workflows, error)
+	GetWorkflowTriggers() ([]models.WorkflowTriggers, error)
 	GetWorkflowsCount(filter dto.WorkflowFilter) (int, error)
 	GetWorkflowById(id string) (*models.Workflows, error)
 	GetWorkflowGraphById(id string) (*repository.WorkflowsGraph, error)
@@ -35,6 +36,11 @@ func NewWorkflowService(WorkflowRepository repository.WorkflowRepository) Workfl
 // GetWorkflows implements WorkflowService.
 func (w *WorkflowServiceImpl) GetWorkflows(offset int, limit int, filter dto.WorkflowFilter) ([]models.Workflows, error) {
 	return w.WorkflowRepository.GetWorkflows(offset, limit, filter)
+}
+
+// GetWorkflowTriggers implements WorkflowService.
+func (w *WorkflowServiceImpl) GetWorkflowTriggers() ([]models.WorkflowTriggers, error) {
+	return w.WorkflowRepository.GetWorkflowTriggers()
 }
 
 // GetWorkflowsCount implements WorkflowService.

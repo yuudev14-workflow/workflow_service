@@ -27,6 +27,7 @@ type WorkflowsGraph struct {
 
 type WorkflowRepository interface {
 	GetWorkflows(offset int, limit int, filter dto.WorkflowFilter) ([]models.Workflows, error)
+	GetWorkflowTriggers() ([]models.WorkflowTriggers, error)
 	GetWorkflowsCount(filter dto.WorkflowFilter) (int, error)
 	GetWorkflowById(id string) (*models.Workflows, error)
 	GetWorkflowGraphById(id string) (*WorkflowsGraph, error)
@@ -58,6 +59,15 @@ func (w *WorkflowRepositoryImpl) GetWorkflows(offset int, limit int, filter dto.
 
 	}
 	return DbExecAndReturnMany[models.Workflows](
+		w.DB,
+		statement,
+	)
+}
+
+// GetWorkflowTriggers implements WorkflowRepository.
+func (w *WorkflowRepositoryImpl) GetWorkflowTriggers() ([]models.WorkflowTriggers, error) {
+	statement := sq.Select("*").From("workflow_triggers")
+	return DbExecAndReturnMany[models.WorkflowTriggers](
 		w.DB,
 		statement,
 	)
