@@ -91,7 +91,13 @@ func (w *WorkflowController) GetWorkflowGraphById(c *gin.Context) {
 
 	if workflowErr != nil {
 		logging.Sugar.Error(workflowErr)
-		response.ResponseError(http.StatusInternalServerError, workflowErr.Error())
+		errMsg := workflowErr.Error()
+
+		if errMsg == "workflow is not found" {
+			response.ResponseError(http.StatusNotFound, errMsg)
+		} else {
+			response.ResponseError(http.StatusInternalServerError, errMsg)
+		}
 		return
 	}
 
