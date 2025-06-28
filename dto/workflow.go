@@ -34,8 +34,8 @@ type Task struct {
 	ConnectorName string                  `json:"connector_name"`
 	Operation     string                  `json:"operation"`
 	Config        types.Nullable[string]  `json:"config,omitempty"`
-	X             int                     `form:"x,default=0"`
-	Y             int                     `form:"y,default=0"`
+	X             float32                 `form:"x,default=0"`
+	Y             float32                 `form:"y,default=0"`
 }
 
 type UpdateWorkflowtasks struct {

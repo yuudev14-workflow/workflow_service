@@ -23,6 +23,6 @@ type Tasks struct {
 	CreatedAt     time.Time      `db:"created_at" json:"created_at"`
 	UpdatedAt     time.Time      `db:"updated_at" json:"updated_at"`
 	Position      Position       `db:"position" json:"position"`
-	X             int            `db:"x" json:"x"`
-	Y             int            `db:"y" json:"y"`
+	X             float32        `db:"x" json:"x"`
+	Y             float32        `db:"y" json:"y"`
 }

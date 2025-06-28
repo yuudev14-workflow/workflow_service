@@ -18,6 +18,7 @@ CREATE TYPE task_status AS ENUM (
     'failed'
 );
 
+
 -- Create tables
 CREATE TABLE IF NOT EXISTS
   users (
@@ -77,8 +78,8 @@ CREATE TABLE
     description TEXT,
     parameters JSONB,
     config VARCHAR(50),
-    x int,
-    y int,
+    x float,
+    y float,
     connector_name VARCHAR(100) NOT NULL,
     operation VARCHAR(100) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
